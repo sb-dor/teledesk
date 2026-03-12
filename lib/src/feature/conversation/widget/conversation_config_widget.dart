@@ -62,6 +62,7 @@ class ConversationConfigWidgetState extends State<ConversationConfigWidget> {
     _quickReplyRepository = deps.quickReplyRepository;
     _conversationController = ConversationController(
       repository: deps.conversationRepository,
+      messageRepository: deps.messageRepository,
       telegram: deps.telegramRepository,
       conversationId: widget.conversationId,
       currentWorkerId: AuthenticationScope.identityOf(context)?.id ?? 0,

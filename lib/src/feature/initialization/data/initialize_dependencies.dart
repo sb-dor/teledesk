@@ -22,6 +22,7 @@ import 'package:teledesk/src/feature/bot_settings/data/bot_settings_repository.d
 import 'package:teledesk/src/feature/chats/data/conversation_repository.dart';
 import 'package:teledesk/src/feature/initialization/data/platform/platform_initialization.dart';
 import 'package:teledesk/src/feature/initialization/models/dependencies.dart';
+import 'package:teledesk/src/feature/message/data/message_repository.dart';
 import 'package:teledesk/src/feature/quick_replies/data/quick_reply_repository.dart';
 import 'package:teledesk/src/feature/telegram/controller/telegram_polling_controller.dart';
 import 'package:teledesk/src/feature/telegram/data/telegram_repository.dart';
@@ -83,6 +84,8 @@ final Map<String, _InitializationStep> _initializationSteps = <String, _Initiali
       WorkerRepositoryImpl(database: dependencies.database, cryptoUtil: CryptoUtil()),
   'Initialize Conversation repository': (dependencies) => dependencies.conversationRepository =
       ConversationRepositoryImpl(database: dependencies.database),
+  'Initialize Message repository': (dependencies) =>
+      dependencies.messageRepository = MessageRepositoryImpl(database: dependencies.database),
   'Initialize QuickReply repository': (dependencies) =>
       dependencies.quickReplyRepository = QuickReplyRepositoryImpl(database: dependencies.database),
   'Initialize BotSettings repository': (dependencies) =>
@@ -94,6 +97,7 @@ final Map<String, _InitializationStep> _initializationSteps = <String, _Initiali
       dependencies.telegramPollingController = TelegramPollingController(
         telegramRepository: dependencies.telegramRepository,
         conversationRepository: dependencies.conversationRepository,
+        messageRepository: dependencies.messageRepository,
         pollingTimeoutSeconds: Config.pollingTimeoutSeconds,
       ),
   'Prepare authentication controller': (dependencies) =>

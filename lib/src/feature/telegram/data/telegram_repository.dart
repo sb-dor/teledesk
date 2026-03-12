@@ -12,8 +12,8 @@ abstract interface class ITelegramRepository {
   /// Send a text message
   Future<void> sendMessage({required int chatId, required String text, String? parseMode});
 
-  /// Send a photo (from file bytes)
-  Future<void> sendPhoto({
+  /// Send a photo (from file bytes). Returns the Telegram file_id of the sent photo.
+  Future<String?> sendPhoto({
     required int chatId,
     required Uint8List photoBytes,
     String? fileName,
@@ -133,7 +133,7 @@ final class TelegramRepositoryImpl implements ITelegramRepository {
   }
 
   @override
-  Future<void> sendPhoto({
+  Future<String?> sendPhoto({
     required int chatId,
     required Uint8List photoBytes,
     String? fileName,
@@ -150,6 +150,15 @@ final class TelegramRepositoryImpl implements ITelegramRepository {
     final response = await http.Response.fromStream(streamed);
     final json = jsonDecode(response.body) as Map<String, dynamic>;
     if (json['ok'] != true) throw Exception('Telegram API error: ${json['description']}');
+    // Return file_id of the largest photo size
+    try {
+      final result = json['result'] as Map<String, dynamic>;
+      final photos = result['photo'] as List<dynamic>;
+      if (photos.isNotEmpty) {
+        return (photos.last as Map<String, dynamic>)['file_id'] as String?;
+      }
+    } catch (_) {}
+    return null;
   }
 
   @override

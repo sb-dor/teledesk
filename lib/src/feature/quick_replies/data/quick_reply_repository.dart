@@ -4,8 +4,11 @@ import 'package:teledesk/src/feature/quick_replies/model/quick_reply.dart';
 
 abstract interface class IQuickReplyRepository {
   Stream<List<QuickReply>> watchAll();
+
   Future<QuickReply> create({required String title, required String content, int? workerId});
+
   Future<void> update(QuickReply reply);
+
   Future<void> delete(int id);
 }
 

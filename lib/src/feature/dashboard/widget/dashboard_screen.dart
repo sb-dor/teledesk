@@ -64,7 +64,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return MainNavigation(
       currentRoute: Routes.dashboard,
       child: _DashboardScaffold(
-        worker: worker as Worker,
+        worker: worker,
         isPolling: isPolling,
         stats: _stats,
         loadingStats: _loadingStats,
@@ -83,7 +83,7 @@ class _DashboardScaffold extends StatelessWidget {
     required this.onRefresh,
   });
 
-  final Worker? worker;
+  final Identity? worker;
   final bool isPolling;
   final Map<String, int>? stats;
   final bool loadingStats;
@@ -162,7 +162,7 @@ class _DashboardScaffold extends StatelessWidget {
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              worker?.role.name ?? '',
+                              worker?.identityRole.name ?? '',
                               style: theme.textTheme.bodyMedium?.copyWith(
                                 color: colorScheme.onSurfaceVariant,
                               ),

@@ -1,4 +1,4 @@
-import 'package:meta/meta.dart';
+import 'package:flutter/foundation.dart';
 
 enum IdentityRole { admin, worker }
 
@@ -10,91 +10,110 @@ sealed class Identity {
 
   int get id;
 
-  String get fullName;
+  String get username;
+
+  String? get displayName;
+
+  String? get colorCode;
+
+  IdentityStatus? get status;
+
+  DateTime? get createdAt;
 
   IdentityRole get identityRole;
+
+  String get initials {
+    final name = displayName ?? username;
+    final parts = name.trim().split(' ');
+    if (parts.length >= 2) {
+      return '${parts.first[0]}${parts.last[0]}'.toUpperCase();
+    }
+    return name.isNotEmpty ? name[0].toUpperCase() : '?';
+  }
 }
 
 class Admin extends Identity {
   const Admin({
     required this.id,
     required this.username,
-    required this.displayName,
-    required this.colorCode,
-    required this.status,
-    required this.isActive,
-    required this.createdAt,
+    this.displayName,
+    this.colorCode,
+    this.status,
+    this.createdAt,
   });
 
   @override
   final int id;
-  final String username;
-  final String displayName;
-  final String colorCode;
-  final IdentityStatus status;
-  final bool isActive;
-  final DateTime createdAt;
-
   @override
-  String get fullName => username;
+  final String username;
+  @override
+  final String? displayName;
+  @override
+  final String? colorCode;
+  @override
+  final IdentityStatus? status;
+  @override
+  final DateTime? createdAt;
 
   @override
   IdentityRole get identityRole => IdentityRole.admin;
+
+  Admin copyWith({
+    int? id,
+    String? username,
+    ValueGetter<String?>? displayName,
+    ValueGetter<String?>? colorCode,
+    ValueGetter<IdentityStatus?>? status,
+    ValueGetter<DateTime?>? createdAt,
+  }) => Admin(
+    id: id ?? this.id,
+    username: username ?? this.username,
+    displayName: displayName != null ? displayName() : this.displayName,
+    colorCode: colorCode != null ? colorCode() : this.colorCode,
+    status: status != null ? status() : this.status,
+    createdAt: createdAt != null ? createdAt() : this.createdAt,
+  );
 }
 
 class Worker extends Identity {
   const Worker({
     required this.id,
     required this.username,
-    required this.displayName,
-    required this.role,
-    required this.colorCode,
-    required this.status,
-    required this.isActive,
-    required this.createdAt,
+    this.displayName,
+    this.colorCode,
+    this.status,
+    this.createdAt,
   });
 
   @override
   final int id;
+  @override
   final String username;
-  final String displayName;
-  final IdentityRole role;
-  final String colorCode;
-  final IdentityStatus status;
-  final bool isActive;
-  final DateTime createdAt;
+  @override
+  final String? displayName;
+  @override
+  final String? colorCode;
+  @override
+  final IdentityStatus? status;
+  @override
+  final DateTime? createdAt;
 
-  String get initials {
-    final parts = displayName.trim().split(' ');
-    if (parts.length >= 2) {
-      return '${parts.first[0]}${parts.last[0]}'.toUpperCase();
-    }
-    return displayName.isNotEmpty ? displayName[0].toUpperCase() : '?';
-  }
+  @override
+  IdentityRole get identityRole => IdentityRole.admin;
 
   Worker copyWith({
     int? id,
     String? username,
-    String? displayName,
-    IdentityRole? role,
-    String? colorCode,
-    IdentityStatus? status,
-    bool? isActive,
-    DateTime? createdAt,
+    ValueGetter<String?>? displayName,
+    ValueGetter<String?>? colorCode,
+    ValueGetter<IdentityStatus?>? status,
+    ValueGetter<DateTime?>? createdAt,
   }) => Worker(
     id: id ?? this.id,
     username: username ?? this.username,
-    displayName: displayName ?? this.displayName,
-    role: role ?? this.role,
-    colorCode: colorCode ?? this.colorCode,
-    status: status ?? this.status,
-    isActive: isActive ?? this.isActive,
-    createdAt: createdAt ?? this.createdAt,
+    displayName: displayName != null ? displayName() : this.displayName,
+    colorCode: colorCode != null ? colorCode() : this.colorCode,
+    status: status != null ? status() : this.status,
+    createdAt: createdAt != null ? createdAt() : this.createdAt,
   );
-
-  @override
-  String get fullName => username;
-
-  @override
-  IdentityRole get identityRole => IdentityRole.worker;
 }

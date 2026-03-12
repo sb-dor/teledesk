@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:teledesk/src/feature/authentication/model/identity.dart';
+import 'package:teledesk/src/feature/authentication/widget/authentication_scope.dart';
 import 'package:teledesk/src/feature/bot_settings/controller/bot_settings_controller.dart';
 import 'package:teledesk/src/feature/bot_settings/model/bot_command.dart';
 import 'package:teledesk/src/feature/initialization/models/dependencies.dart';
@@ -63,6 +65,32 @@ class _BotSettingsScreenState extends State<BotSettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Admin-only screen
+    final identity = AuthenticationScope.identityOf(context);
+    if (identity?.identityRole != IdentityRole.admin) {
+      return Scaffold(
+        appBar: AppBar(
+          title: const Text('Bot Settings'),
+          leading: BackButton(onPressed: () => Navigator.of(context).maybePop()),
+        ),
+        body: const Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.lock_rounded, size: 64, color: Colors.grey),
+              SizedBox(height: 16),
+              Text('Admin access required', style: TextStyle(fontSize: 16)),
+              SizedBox(height: 8),
+              Text(
+                'Only administrators can manage bot settings.',
+                style: TextStyle(color: Colors.grey),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final state = _controller.state;

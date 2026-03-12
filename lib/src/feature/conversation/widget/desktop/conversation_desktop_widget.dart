@@ -119,8 +119,8 @@ class _ConversationDesktopWidgetState extends State<ConversationDesktopWidget> {
                           style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                         ),
                       ),
-                      title: Text(w.displayName),
-                      subtitle: Text(w.role.name),
+                      title: Text(w.displayName ?? w.username),
+                      subtitle: Text(w.identityRole.name),
                       onTap: () {
                         Navigator.of(ctx).pop();
                         scope.conversationController.transferTo(w.id);
@@ -268,9 +268,7 @@ class _ConversationDesktopWidgetState extends State<ConversationDesktopWidget> {
                 child: state is Conversation$LoadingState
                     ? const Center(child: CircularProgressIndicator())
                     : StreamBuilder<List<ChatMessage>>(
-                        stream: deps.conversationRepository.watchMessages(
-                          scope.widget.conversationId,
-                        ),
+                        stream: deps.messageRepository.watchMessages(scope.widget.conversationId),
                         builder: (ctx, snapshot) {
                           final messages = snapshot.data ?? [];
                           if (messages.isNotEmpty) {
@@ -602,15 +600,7 @@ class _MessageContent extends StatelessWidget {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Container(
-              width: 200,
-              height: 150,
-              decoration: BoxDecoration(
-                color: Colors.black12,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: const Center(child: Icon(Icons.photo_rounded, size: 40, color: Colors.grey)),
-            ),
+            _PhotoBubble(fileId: message.fileId, textColor: textColor),
             if (message.text != null && message.text!.isNotEmpty)
               Padding(
                 padding: const EdgeInsets.only(top: 4),
@@ -717,6 +707,74 @@ class _MediaTile extends StatelessWidget {
             child: Text(caption!, style: TextStyle(color: textColor)),
           ),
       ],
+    );
+  }
+}
+
+class _PhotoBubble extends StatefulWidget {
+  const _PhotoBubble({required this.fileId, required this.textColor});
+
+  final String? fileId;
+  final Color textColor;
+
+  @override
+  State<_PhotoBubble> createState() => _PhotoBubbleState();
+}
+
+class _PhotoBubbleState extends State<_PhotoBubble> {
+  Future<String?>? _urlFuture;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (widget.fileId != null && _urlFuture == null) {
+      final repo = Dependencies.of(context).telegramRepository;
+      _urlFuture = repo.getFileUrl(fileId: widget.fileId!);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (widget.fileId == null) {
+      return _placeholder();
+    }
+    return FutureBuilder<String?>(
+      future: _urlFuture,
+      builder: (ctx, snapshot) {
+        if (snapshot.connectionState != ConnectionState.done) {
+          return _placeholder(loading: true);
+        }
+        final url = snapshot.data;
+        if (url == null) return _placeholder();
+        return ClipRRect(
+          borderRadius: BorderRadius.circular(8),
+          child: Image.network(
+            url,
+            width: 220,
+            fit: BoxFit.cover,
+            loadingBuilder: (_, child, progress) =>
+                progress == null ? child : _placeholder(loading: true),
+            errorBuilder: (_, __, ___) => _placeholder(),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _placeholder({bool loading = false}) {
+    return Container(
+      width: 220,
+      height: 150,
+      decoration: BoxDecoration(color: Colors.black12, borderRadius: BorderRadius.circular(8)),
+      child: Center(
+        child: loading
+            ? const SizedBox(
+                width: 24,
+                height: 24,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
+            : Icon(Icons.photo_rounded, size: 40, color: widget.textColor.withOpacity(0.5)),
+      ),
     );
   }
 }

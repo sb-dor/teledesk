@@ -6,6 +6,7 @@ import 'package:teledesk/src/feature/authentication/controller/authentication_co
 import 'package:teledesk/src/feature/bot_settings/data/bot_settings_repository.dart';
 import 'package:teledesk/src/feature/chats/data/conversation_repository.dart';
 import 'package:teledesk/src/feature/initialization/widget/dependencies_scope.dart';
+import 'package:teledesk/src/feature/message/data/message_repository.dart';
 import 'package:teledesk/src/feature/quick_replies/data/quick_reply_repository.dart';
 import 'package:teledesk/src/feature/telegram/controller/telegram_polling_controller.dart';
 import 'package:teledesk/src/feature/telegram/data/telegram_repository.dart';
@@ -44,6 +45,9 @@ class Dependencies {
 
   /// Conversation repository
   late final IConversationRepository conversationRepository;
+
+  /// Message repository
+  late final IMessageRepository messageRepository;
 
   /// Quick reply repository
   late final IQuickReplyRepository quickReplyRepository;

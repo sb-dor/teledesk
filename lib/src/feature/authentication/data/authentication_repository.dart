@@ -18,7 +18,7 @@ class AuthenticationRepositoryImpl implements IAuthenticationRepository {
   final CryptoUtil _cryptoUtil;
 
   @override
-  Future<Worker?> authenticate(String username, String password) async {
+  Future<Identity?> authenticate(String username, String password) async {
     final row =
         await (_appDatabase.select(_appDatabase.workersTbl)
               ..where((t) => t.username.equals(username))
@@ -28,23 +28,33 @@ class AuthenticationRepositoryImpl implements IAuthenticationRepository {
 
     if (!_cryptoUtil.verifyPassword(password, row.passwordHash)) return null;
 
-    final worker = Worker(
+    final status = switch (row.status) {
+      'online' => IdentityStatus.online,
+      'away' => IdentityStatus.away,
+      'busy' => IdentityStatus.busy,
+      _ => IdentityStatus.offline,
+    };
+    final createdAt = DateTime.fromMillisecondsSinceEpoch(row.createdAt * 1000);
+
+    if (row.role == 'admin') {
+      return Admin(
+        id: row.id,
+        username: row.username,
+        displayName: row.displayName,
+        colorCode: row.colorCode,
+        status: status,
+        createdAt: createdAt,
+      );
+    }
+
+    return Worker(
       id: row.id,
       username: row.username,
       displayName: row.displayName,
-      role: row.role == 'admin' ? IdentityRole.admin : IdentityRole.worker,
       colorCode: row.colorCode,
-      status: switch (row.status) {
-        'online' => IdentityStatus.online,
-        'away' => IdentityStatus.away,
-        'busy' => IdentityStatus.busy,
-        _ => IdentityStatus.offline,
-      },
-      isActive: row.isActive,
-      createdAt: DateTime.fromMillisecondsSinceEpoch(row.createdAt * 1000),
+      status: status,
+      createdAt: createdAt,
     );
-
-    return worker;
   }
 }
 

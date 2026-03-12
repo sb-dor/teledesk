@@ -24,7 +24,7 @@ class ConversationDataController with ChangeNotifier {
       _showQuickReplies = _filteredReplies.isNotEmpty;
     } else if (text == '#') {
       _filteredReplies = allReplies;
-      _showQuickReplies = true;
+      _showQuickReplies = _filteredReplies.isNotEmpty;
     } else {
       _showQuickReplies = false;
       _filteredReplies = [];

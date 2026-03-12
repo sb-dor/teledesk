@@ -4,6 +4,7 @@ import 'package:control/control.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:teledesk/src/feature/chats/data/conversation_repository.dart';
 import 'package:teledesk/src/feature/chats/model/conversation.dart';
+import 'package:teledesk/src/feature/message/data/message_repository.dart';
 import 'package:teledesk/src/feature/telegram/data/telegram_repository.dart';
 
 part 'conversation_controller.freezed.dart';
@@ -21,16 +22,19 @@ final class ConversationController extends StateController<ConversationState>
     with SequentialControllerHandler {
   ConversationController({
     required IConversationRepository repository,
+    required IMessageRepository messageRepository,
     required ITelegramRepository telegram,
     required int conversationId,
     required int currentWorkerId,
   }) : _repository = repository,
+       _messages = messageRepository,
        _telegram = telegram,
        _conversationId = conversationId,
        _workerId = currentWorkerId,
        super(initialState: const ConversationState.loading());
 
   final IConversationRepository _repository;
+  final IMessageRepository _messages;
   final ITelegramRepository _telegram;
   final int _conversationId;
   final int _workerId;
@@ -45,10 +49,10 @@ final class ConversationController extends StateController<ConversationState>
       // Auto-assign if open
       if (conv.status == ConversationStatus.open) {
         await _repository.assignConversation(_conversationId, _workerId);
-        await _repository.markMessagesRead(_conversationId);
+        await _messages.markMessagesRead(_conversationId);
       } else if (conv.status == ConversationStatus.inProgress &&
           conv.assignedWorkerId == _workerId) {
-        await _repository.markMessagesRead(_conversationId);
+        await _messages.markMessagesRead(_conversationId);
       }
     }
 
@@ -71,14 +75,14 @@ final class ConversationController extends StateController<ConversationState>
       final conv = current.conversation;
       setState(const ConversationState.sending());
       await _telegram.sendMessage(chatId: conv.telegramUserId, text: text);
-      await _repository.saveOutgoingMessage(
+      await _messages.saveOutgoingMessage(
         conversationId: _conversationId,
         messageType: 'text',
         text: text,
         sentByWorkerId: _workerId,
         sentAt: DateTime.now(),
       );
-      await _repository.updateLastMessage(_conversationId, text, DateTime.now());
+      await _messages.updateLastMessage(_conversationId, text, DateTime.now());
       setState(ConversationState.idle(conv));
     },
     error: (e, st) async {
@@ -94,16 +98,17 @@ final class ConversationController extends StateController<ConversationState>
       if (current is! Conversation$IdleState) return;
       final conv = current.conversation;
       setState(const ConversationState.sending());
-      await _telegram.sendPhoto(
+      final fileId = await _telegram.sendPhoto(
         chatId: conv.telegramUserId,
         photoBytes: bytes,
         fileName: fileName,
         caption: caption,
       );
-      await _repository.saveOutgoingMessage(
+      await _messages.saveOutgoingMessage(
         conversationId: _conversationId,
         messageType: 'photo',
         text: caption,
+        fileId: fileId,
         fileName: fileName,
         sentByWorkerId: _workerId,
         sentAt: DateTime.now(),
@@ -128,7 +133,7 @@ final class ConversationController extends StateController<ConversationState>
         fileName: fileName,
         caption: caption,
       );
-      await _repository.saveOutgoingMessage(
+      await _messages.saveOutgoingMessage(
         conversationId: _conversationId,
         messageType: 'document',
         text: caption,
@@ -145,7 +150,7 @@ final class ConversationController extends StateController<ConversationState>
   );
 
   void addNote(String text) => handle(() async {
-    await _repository.saveNote(
+    await _messages.saveNote(
       conversationId: _conversationId,
       text: text,
       sentByWorkerId: _workerId,

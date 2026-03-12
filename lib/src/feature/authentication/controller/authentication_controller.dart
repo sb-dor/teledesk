@@ -27,18 +27,26 @@ sealed class AuthenticationState with _$AuthenticationState {
     _ => null,
   };
 
+  /// Returns the authenticated identity (Admin or Worker), or null.
+  Identity? get identity => switch (this) {
+    final Authentication$AuthenticatedState s => s.identity,
+    _ => null,
+  };
+
+  /// Returns the Worker identity if authenticated as a Worker, or null.
   Worker? get worker => switch (this) {
     final Authentication$AuthenticatedState s => switch (s.identity) {
       Worker() => s.identity as Worker,
-      Admin() => null,
+      _ => null,
     },
     _ => null,
   };
 
+  /// Returns the Admin identity if authenticated as an Admin, or null.
   Admin? get admin => switch (this) {
     final Authentication$AuthenticatedState s => switch (s.identity) {
-      Worker() => null,
       Admin() => s.identity as Admin,
+      _ => null,
     },
     _ => null,
   };
@@ -53,7 +61,6 @@ final class AuthenticationController extends StateController<AuthenticationState
     required IWorkerRepository workerRepository,
     super.initialState = const AuthenticationState.idle(),
   }) : _iAuthenticationRepository = authenticationRepository,
-
        _repository = workerRepository;
 
   final IAuthenticationRepository _iAuthenticationRepository;
@@ -85,26 +92,35 @@ final class AuthenticationController extends StateController<AuthenticationState
       colorCode: '#6366F1',
     );
     await _repository.updateStatus(worker.id, IdentityStatus.online);
-    setState(AuthenticationState.authenticated(worker.copyWith(status: IdentityStatus.online)));
+    // Store as Admin identity
+    final admin = Admin(
+      id: worker.id,
+      username: worker.username,
+      displayName: worker.displayName,
+      colorCode: worker.colorCode,
+      status: IdentityStatus.online,
+      createdAt: worker.createdAt,
+    );
+    setState(AuthenticationState.authenticated(admin));
   }, error: (e, st) async => setState(AuthenticationState.error(e.toString())));
 
   /// Sign in with username and password
   void signIn({required String username, required String password}) => handle(() async {
     setState(const AuthenticationState.inProgress());
-    final worker = await _iAuthenticationRepository.authenticate(username, password);
-    if (worker == null) {
+    final identity = await _iAuthenticationRepository.authenticate(username, password);
+    if (identity == null) {
       setState(const AuthenticationState.error('Invalid username or password'));
       return;
     }
-    await _repository.updateStatus(worker.id, IdentityStatus.online);
-    setState(AuthenticationState.authenticated(worker));
+    await _repository.updateStatus(identity.id, IdentityStatus.online);
+    setState(AuthenticationState.authenticated(identity));
   }, error: (e, st) async => setState(AuthenticationState.error(e.toString())));
 
   /// Sign out
   void signOut() => handle(() async {
-    final worker = state.worker;
-    if (worker != null) {
-      await _repository.updateStatus(worker.id, IdentityStatus.offline);
+    final identity = state.identity;
+    if (identity != null) {
+      await _repository.updateStatus(identity.id, IdentityStatus.offline);
     }
     setState(const AuthenticationState.idle());
   });

@@ -17,24 +17,22 @@ class SettingsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    final worker = AuthenticationScope.identityOf(context);
+    final identity = AuthenticationScope.identityOf(context);
     final metadata = Dependencies.of(context).metadata;
     final themeMode = SettingsScope.themeModeOf(context);
     final isDark = themeMode == ThemeMode.dark;
 
     return MainNavigation(
       currentRoute: Routes.settings,
-      child: _SettingsScaffold(worker: worker as Worker, isDark: isDark, metadata: metadata),
+      child: _SettingsScaffold(identity: identity, isDark: isDark, metadata: metadata),
     );
   }
 }
 
 class _SettingsScaffold extends StatelessWidget {
-  const _SettingsScaffold({required this.worker, required this.isDark, required this.metadata});
+  const _SettingsScaffold({required this.identity, required this.isDark, required this.metadata});
 
-  final Worker? worker;
+  final Identity? identity;
   final bool isDark;
   final AppMetadata metadata;
 
@@ -42,6 +40,7 @@ class _SettingsScaffold extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final isAdmin = identity?.identityRole == IdentityRole.admin;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Settings')),
@@ -58,7 +57,7 @@ class _SettingsScaffold extends StatelessWidget {
                     radius: 28,
                     backgroundColor: colorScheme.primaryContainer,
                     child: Text(
-                      worker?.initials ?? '?',
+                      identity?.initials ?? '?',
                       style: TextStyle(
                         color: colorScheme.primary,
                         fontWeight: FontWeight.bold,
@@ -72,12 +71,12 @@ class _SettingsScaffold extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          worker?.displayName ?? 'Unknown',
+                          identity?.displayName ?? 'Unknown',
                           style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          '@${worker?.username ?? ''}',
+                          '@${identity?.username ?? ''}',
                           style: theme.textTheme.bodySmall?.copyWith(
                             color: colorScheme.onSurfaceVariant,
                           ),
@@ -90,7 +89,7 @@ class _SettingsScaffold extends StatelessWidget {
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Text(
-                            worker?.role == IdentityRole.admin ? 'Admin' : 'Worker',
+                            isAdmin ? 'Admin' : 'Worker',
                             style: TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.w600,
@@ -126,7 +125,7 @@ class _SettingsScaffold extends StatelessWidget {
           const SizedBox(height: 16),
 
           // Admin section
-          if (worker?.identityRole == IdentityRole.admin) ...[
+          if (isAdmin) ...[
             Text(
               'Administration',
               style: theme.textTheme.labelLarge?.copyWith(color: colorScheme.onSurfaceVariant),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:teledesk/src/feature/authentication/model/identity.dart';
+import 'package:teledesk/src/feature/authentication/widget/authentication_scope.dart';
 import 'package:teledesk/src/feature/initialization/models/dependencies.dart';
 import 'package:teledesk/src/feature/workers/controller/workers_controller.dart';
 
@@ -40,6 +41,29 @@ class _WorkersScreenState extends State<WorkersScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Admin-only screen
+    final identity = AuthenticationScope.identityOf(context);
+    if (identity?.identityRole != IdentityRole.admin) {
+      return Scaffold(
+        appBar: AppBar(
+          title: const Text('Workers'),
+          leading: BackButton(onPressed: () => Navigator.of(context).maybePop()),
+        ),
+        body: const Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.lock_rounded, size: 64, color: Colors.grey),
+              SizedBox(height: 16),
+              Text('Admin access required', style: TextStyle(fontSize: 16)),
+              SizedBox(height: 8),
+              Text('Only administrators can manage workers.', style: TextStyle(color: Colors.grey)),
+            ],
+          ),
+        ),
+      );
+    }
+
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final state = _controller.state;
@@ -291,7 +315,7 @@ class _WorkersScreenState extends State<WorkersScreen> {
       builder: (ctx) => AlertDialog(
         title: const Text('Deactivate Worker'),
         content: Text(
-          'Are you sure you want to deactivate ${worker.displayName}? They will no longer be able to log in.',
+          'Are you sure you want to deactivate ${worker.displayName ?? worker.username}? They will no longer be able to log in.',
         ),
         actions: [
           TextButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text('Cancel')),
@@ -332,14 +356,14 @@ class _WorkerCard extends StatelessWidget {
     IdentityStatus.online => Colors.green,
     IdentityStatus.away => Colors.amber,
     IdentityStatus.busy => Colors.red,
-    IdentityStatus.offline => Colors.grey,
+    IdentityStatus.offline || null => Colors.grey,
   };
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final workerColor = _hexColor(worker.colorCode);
+    final workerColor = worker.colorCode == null ? Colors.green : _hexColor(worker.colorCode!);
 
     return Card(
       child: Padding(
@@ -380,7 +404,7 @@ class _WorkerCard extends StatelessWidget {
                   Row(
                     children: [
                       Text(
-                        worker.displayName,
+                        worker.displayName ?? worker.username,
                         style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
                       ),
                       const SizedBox(width: 8),

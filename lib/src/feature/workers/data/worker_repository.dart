@@ -35,7 +35,6 @@ final class WorkerRepositoryImpl implements IWorkerRepository {
     id: row.id,
     username: row.username,
     displayName: row.displayName,
-    role: row.role == 'admin' ? IdentityRole.admin : IdentityRole.worker,
     colorCode: row.colorCode,
     status: switch (row.status) {
       'online' => IdentityStatus.online,
@@ -43,7 +42,6 @@ final class WorkerRepositoryImpl implements IWorkerRepository {
       'busy' => IdentityStatus.busy,
       _ => IdentityStatus.offline,
     },
-    isActive: row.isActive,
     createdAt: DateTime.fromMillisecondsSinceEpoch(row.createdAt * 1000),
   );
 
@@ -81,10 +79,8 @@ final class WorkerRepositoryImpl implements IWorkerRepository {
       id: id,
       username: username,
       displayName: displayName,
-      role: role,
       colorCode: colorCode,
       status: IdentityStatus.offline,
-      isActive: true,
       createdAt: DateTime.fromMillisecondsSinceEpoch(now * 1000),
     );
   }
@@ -145,10 +141,8 @@ final class FakeWorderRepoImpl implements IWorkerRepository {
       id: 1,
       username: username,
       displayName: displayName,
-      role: role,
       colorCode: colorCode,
       status: IdentityStatus.away,
-      isActive: false,
       createdAt: DateTime.now(),
     ),
   );

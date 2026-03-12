@@ -13,7 +13,7 @@ class AuthenticationScope extends StatefulWidget {
   final Widget child;
 
   static Identity? identityOf(BuildContext context, {bool listen = true}) =>
-      _InheritedAuth.of(context, listen: listen).state.worker;
+      _InheritedAuth.of(context, listen: listen).state.identity;
 
   static AuthenticationController controllerOf(BuildContext context) =>
       _InheritedAuth.of(context, listen: false).controller;
