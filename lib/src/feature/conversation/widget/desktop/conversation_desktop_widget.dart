@@ -13,6 +13,7 @@ import 'package:teledesk/src/feature/conversation/widget/controllers/conversatio
 import 'package:teledesk/src/feature/initialization/models/dependencies.dart';
 import 'package:teledesk/src/feature/authentication/data/worker_repository.dart';
 import 'package:teledesk/src/feature/authentication/model/worker.dart';
+import 'package:teledesk/src/feature/quick_replies/model/quick_reply.dart';
 
 class ConversationDesktopWidget extends StatefulWidget {
   const ConversationDesktopWidget({super.key});
@@ -794,8 +795,8 @@ class _MediaTile extends StatelessWidget {
 class _QuickRepliesPanel extends StatelessWidget {
   const _QuickRepliesPanel({required this.replies, required this.onSelect});
 
-  final List replies;
-  final Function(dynamic) onSelect;
+  final List<QuickReply> replies;
+  final Function(QuickReply) onSelect;
 
   @override
   Widget build(BuildContext context) {

@@ -43,30 +43,39 @@ class ConversationConfigWidget extends StatefulWidget {
 }
 
 class ConversationConfigWidgetState extends State<ConversationConfigWidget> {
-  late final ConversationController conversationController;
-  late final ConversationDataController conversationDataController;
-  late final IQuickReplyRepository quickReplyRepository;
+  ConversationController? _conversationController;
+  ConversationDataController? _conversationDataController;
+  IQuickReplyRepository? _quickReplyRepository;
   List<QuickReply> quickReplies = [];
   StreamSubscription<List<QuickReply>>? _quickRepliesSub;
+  bool _initialized = false;
+
+  ConversationController get conversationController => _conversationController!;
+  ConversationDataController get conversationDataController => _conversationDataController!;
+  IQuickReplyRepository get quickReplyRepository => _quickReplyRepository!;
 
   @override
   void initState() {
     super.initState();
+    _conversationDataController = ConversationDataController();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_initialized) return;
+    _initialized = true;
     final deps = Dependencies.of(context);
-    quickReplyRepository = deps.quickReplyRepository;
-    conversationDataController = ConversationDataController();
-    conversationController = ConversationController(
+    _quickReplyRepository = deps.quickReplyRepository;
+    _conversationController = ConversationController(
       repository: deps.conversationRepository,
       telegram: deps.telegramRepository,
       conversationId: widget.conversationId,
       currentWorkerId: AuthenticationScope.workerOf(context)?.id ?? 0,
     )..initialize();
 
-    // Load quick replies
-    _quickRepliesSub = quickReplyRepository.watchAll().listen((replies) {
-      if (mounted) {
-        setState(() => quickReplies = replies);
-      }
+    _quickRepliesSub = _quickReplyRepository!.watchAll().listen((replies) {
+      if (mounted) setState(() => quickReplies = replies);
     });
   }
 

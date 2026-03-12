@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:octopus/octopus.dart';
+import 'package:teledesk/src/common/model/app_metadata.dart';
 import 'package:teledesk/src/common/router/routes.dart';
 import 'package:teledesk/src/common/widget/main_navigation.dart';
 import 'package:teledesk/src/feature/authentication/model/worker.dart';
@@ -43,7 +44,7 @@ class _SettingsScaffold extends StatelessWidget {
 
   final Worker? worker;
   final bool isDark;
-  final dynamic metadata;
+  final AppMetadata metadata;
 
   @override
   Widget build(BuildContext context) {

@@ -167,3 +167,49 @@ final class WorkerRepositoryImpl implements IWorkerRepository {
     );
   }
 }
+
+final class FakeWorderRepoImpl implements IWorkerRepository {
+  @override
+  Future<Worker?> authenticate(String username, String password) => Future.value(null);
+
+  @override
+  Future<int> countWorkers() => Future.value(1);
+
+  @override
+  Future<Worker> createWorker({
+    required String username,
+    required String password,
+    required String displayName,
+    required WorkerRole role,
+    required String colorCode,
+  }) => Future.value(
+    Worker(
+      id: 1,
+      username: username,
+      displayName: displayName,
+      role: role,
+      colorCode: colorCode,
+      status: WorkerStatus.away,
+      isActive: false,
+      createdAt: DateTime.now(),
+    ),
+  );
+
+  @override
+  Future<void> deactivateWorker(int workerId) => Future.value();
+
+  @override
+  Future<Worker?> findByUsername(String username) => Future.value(null);
+
+  @override
+  Future<List<Worker>> getWorkers() => Future.value(List.empty());
+
+  @override
+  Future<void> updatePassword(int workerId, String newPassword) => Future.value(null);
+
+  @override
+  Future<void> updateStatus(int workerId, WorkerStatus status) => Future.value(null);
+
+  @override
+  Future<void> updateWorker(Worker worker) => Future.value(null);
+}

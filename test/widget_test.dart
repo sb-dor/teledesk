@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:octopus/octopus.dart';
 import 'package:teledesk/src/feature/authentication/controller/authentication_controller.dart';
+import 'package:teledesk/src/feature/authentication/data/worker_repository.dart';
 import 'package:teledesk/src/feature/initialization/models/dependencies.dart';
 import 'package:teledesk/src/feature/initialization/widget/app.dart';
 import 'package:teledesk/src/feature/initialization/widget/dependencies_scope.dart';
@@ -21,9 +22,7 @@ void main() => group('Widget', () {
 
   testWidgets('App', (tester) async {
     final dependencies = FakeDependencies()
-      ..authenticationController = AuthenticationController(
-       workerRepository: null,
-      );
+      ..authenticationController = AuthenticationController(workerRepository: FakeWorderRepoImpl());
     await tester.pumpWidget(
       dependencies.inject(
         child: const SettingsScope(child: NoAnimationScope(noAnimation: true, child: App())),

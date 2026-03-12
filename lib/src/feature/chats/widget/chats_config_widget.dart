@@ -36,19 +36,31 @@ class ChatsConfigWidget extends StatefulWidget {
 }
 
 class ChatsConfigWidgetState extends State<ChatsConfigWidget> {
-  late final ChatsController chatsController;
-  late final ChatsDataController chatsDataController;
-  late final IConversationRepository conversationRepository;
+  ChatsController? _chatsController;
+  ChatsDataController? _chatsDataController;
+  IConversationRepository? _conversationRepository;
+  bool _initialized = false;
+
+  ChatsController get chatsController => _chatsController!;
+  ChatsDataController get chatsDataController => _chatsDataController!;
+  IConversationRepository get conversationRepository => _conversationRepository!;
 
   @override
   void initState() {
     super.initState();
+    _chatsDataController = ChatsDataController();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_initialized) return;
+    _initialized = true;
     final deps = Dependencies.of(context);
-    conversationRepository = deps.conversationRepository;
+    _conversationRepository = deps.conversationRepository;
     final worker = AuthenticationScope.workerOf(context);
-    chatsDataController = ChatsDataController();
-    chatsController = ChatsController(
-      repository: conversationRepository,
+    _chatsController = ChatsController(
+      repository: _conversationRepository!,
       workerId: worker?.id ?? 0,
     )..initialize();
   }
