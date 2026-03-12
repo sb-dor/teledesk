@@ -1,15 +1,15 @@
 import 'package:flutter/widgets.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:teledesk/src/common/database/database.dart';
 import 'package:teledesk/src/common/model/app_metadata.dart';
 import 'package:teledesk/src/feature/authentication/controller/authentication_controller.dart';
-import 'package:teledesk/src/feature/authentication/data/worker_repository.dart';
 import 'package:teledesk/src/feature/bot_settings/data/bot_settings_repository.dart';
 import 'package:teledesk/src/feature/chats/data/conversation_repository.dart';
 import 'package:teledesk/src/feature/initialization/widget/dependencies_scope.dart';
 import 'package:teledesk/src/feature/quick_replies/data/quick_reply_repository.dart';
 import 'package:teledesk/src/feature/telegram/controller/telegram_polling_controller.dart';
 import 'package:teledesk/src/feature/telegram/data/telegram_repository.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:teledesk/src/feature/workers/data/worker_repository.dart';
 
 /// {@template dependencies}
 /// Application dependencies.

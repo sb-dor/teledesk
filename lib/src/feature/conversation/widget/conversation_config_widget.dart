@@ -12,18 +12,12 @@ import 'package:teledesk/src/feature/quick_replies/data/quick_reply_repository.d
 import 'package:teledesk/src/feature/quick_replies/model/quick_reply.dart';
 
 class ConversationInhWidget extends InheritedWidget {
-  const ConversationInhWidget({
-    super.key,
-    required this.state,
-    required super.child,
-  });
+  const ConversationInhWidget({super.key, required this.state, required super.child});
 
   final ConversationConfigWidgetState state;
 
   static ConversationConfigWidgetState of(BuildContext context) {
-    final widget = context
-        .getElementForInheritedWidgetOfExactType<ConversationInhWidget>()
-        ?.widget;
+    final widget = context.getElementForInheritedWidgetOfExactType<ConversationInhWidget>()?.widget;
     assert(widget != null, 'ConversationInhWidget not found');
     return (widget as ConversationInhWidget).state;
   }
@@ -38,8 +32,7 @@ class ConversationConfigWidget extends StatefulWidget {
   final int conversationId;
 
   @override
-  State<ConversationConfigWidget> createState() =>
-      ConversationConfigWidgetState();
+  State<ConversationConfigWidget> createState() => ConversationConfigWidgetState();
 }
 
 class ConversationConfigWidgetState extends State<ConversationConfigWidget> {
@@ -71,7 +64,7 @@ class ConversationConfigWidgetState extends State<ConversationConfigWidget> {
       repository: deps.conversationRepository,
       telegram: deps.telegramRepository,
       conversationId: widget.conversationId,
-      currentWorkerId: AuthenticationScope.workerOf(context)?.id ?? 0,
+      currentWorkerId: AuthenticationScope.identityOf(context)?.id ?? 0,
     )..initialize();
 
     _quickRepliesSub = _quickReplyRepository!.watchAll().listen((replies) {
@@ -89,10 +82,10 @@ class ConversationConfigWidgetState extends State<ConversationConfigWidget> {
 
   @override
   Widget build(BuildContext context) => ConversationInhWidget(
-        state: this,
-        child: context.screenSizeMaybeWhen(
-          orElse: () => const ConversationDesktopWidget(),
-          phone: () => const ConversationMobileWidget(),
-        ),
-      );
+    state: this,
+    child: context.screenSizeMaybeWhen(
+      orElse: () => const ConversationDesktopWidget(),
+      phone: () => const ConversationMobileWidget(),
+    ),
+  );
 }

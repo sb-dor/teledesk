@@ -26,10 +26,7 @@ class _ChatsMobileWidgetState extends State<ChatsMobileWidget> {
   void _navigateToConversation(BuildContext context, int conversationId) {
     Octopus.of(context).setState(
       (state) =>
-          state
-            ..add(
-              Routes.conversation.node()..arguments['id'] = conversationId.toString(),
-            ),
+          state..add(Routes.conversation.node()..arguments['id'] = conversationId.toString()),
     );
   }
 
@@ -57,12 +54,8 @@ class _ChatsMobileWidgetState extends State<ChatsMobileWidget> {
           conversations = [];
         }
 
-        final openCount = chatsState is Chats$IdleState
-            ? chatsState.openConversations.length
-            : 0;
-        final mineCount = chatsState is Chats$IdleState
-            ? chatsState.myConversations.length
-            : 0;
+        final openCount = chatsState is Chats$IdleState ? chatsState.openConversations.length : 0;
+        final mineCount = chatsState is Chats$IdleState ? chatsState.myConversations.length : 0;
 
         return Scaffold(
           appBar: AppBar(
@@ -86,14 +79,12 @@ class _ChatsMobileWidgetState extends State<ChatsMobileWidget> {
                           )
                         : null,
                     isDense: true,
-                    contentPadding:
-                        const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                    contentPadding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
                   ),
                   onChanged: (q) async {
                     dataController.setSearchQuery(q);
                     if (q.isNotEmpty) {
-                      final results =
-                          await scope.conversationRepository.searchConversations(q);
+                      final results = await scope.conversationRepository.searchConversations(q);
                       dataController.setSearchResults(results);
                     }
                   },
@@ -128,9 +119,7 @@ class _ChatsMobileWidgetState extends State<ChatsMobileWidget> {
                 ),
               ),
               const Divider(height: 1),
-              Expanded(
-                child: _buildBody(context, chatsState, conversations),
-              ),
+              Expanded(child: _buildBody(context, chatsState, conversations)),
             ],
           ),
         );
@@ -138,11 +127,7 @@ class _ChatsMobileWidgetState extends State<ChatsMobileWidget> {
     );
   }
 
-  Widget _buildBody(
-    BuildContext context,
-    ChatsState chatsState,
-    List<Conversation> conversations,
-  ) {
+  Widget _buildBody(BuildContext context, ChatsState chatsState, List<Conversation> conversations) {
     if (chatsState is Chats$LoadingState) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -175,8 +160,8 @@ class _ChatsMobileWidgetState extends State<ChatsMobileWidget> {
             Text(
               'No conversations',
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
             ),
           ],
         ),
@@ -240,9 +225,7 @@ class _MobileTabButton extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(
-                  color: selected
-                      ? colorScheme.primary
-                      : colorScheme.surfaceContainerHighest,
+                  color: selected ? colorScheme.primary : colorScheme.surfaceContainerHighest,
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Text(
@@ -263,20 +246,17 @@ class _MobileTabButton extends StatelessWidget {
 }
 
 class _MobileConversationTile extends StatelessWidget {
-  const _MobileConversationTile({
-    required this.conversation,
-    required this.onTap,
-  });
+  const _MobileConversationTile({required this.conversation, required this.onTap});
 
   final Conversation conversation;
   final VoidCallback onTap;
 
   Color _statusColor(ConversationStatus status) => switch (status) {
-        ConversationStatus.open => Colors.blue,
-        ConversationStatus.inProgress => Colors.orange,
-        ConversationStatus.finishRequested => Colors.purple,
-        ConversationStatus.finished => Colors.grey,
-      };
+    ConversationStatus.open => Colors.blue,
+    ConversationStatus.inProgress => Colors.orange,
+    ConversationStatus.finishRequested => Colors.purple,
+    ConversationStatus.finished => Colors.grey,
+  };
 
   String _formatTime(DateTime dt) {
     final now = DateTime.now();
@@ -316,11 +296,7 @@ class _MobileConversationTile extends StatelessWidget {
                   backgroundColor: avatarColor.withOpacity(0.2),
                   child: Text(
                     conversation.initials,
-                    style: TextStyle(
-                      color: avatarColor,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 14,
-                    ),
+                    style: TextStyle(color: avatarColor, fontWeight: FontWeight.bold, fontSize: 14),
                   ),
                 ),
                 Positioned(
@@ -349,9 +325,7 @@ class _MobileConversationTile extends StatelessWidget {
                         child: Text(
                           conversation.displayName,
                           style: theme.textTheme.titleSmall?.copyWith(
-                            fontWeight: conversation.hasUnread
-                                ? FontWeight.bold
-                                : FontWeight.w500,
+                            fontWeight: conversation.hasUnread ? FontWeight.bold : FontWeight.w500,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -389,8 +363,7 @@ class _MobileConversationTile extends StatelessWidget {
                       if (conversation.hasUnread) ...[
                         const SizedBox(width: 8),
                         Container(
-                          padding:
-                              const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                           decoration: BoxDecoration(
                             color: colorScheme.primary,
                             borderRadius: BorderRadius.circular(10),

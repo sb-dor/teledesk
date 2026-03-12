@@ -1,6 +1,6 @@
 import 'package:flutter/widgets.dart';
 import 'package:teledesk/src/feature/authentication/controller/authentication_controller.dart';
-import 'package:teledesk/src/feature/authentication/model/worker.dart';
+import 'package:teledesk/src/feature/authentication/model/identity.dart';
 import 'package:teledesk/src/feature/initialization/models/dependencies.dart';
 
 /// {@template authentication_scope}
@@ -12,7 +12,7 @@ class AuthenticationScope extends StatefulWidget {
 
   final Widget child;
 
-  static Worker? workerOf(BuildContext context, {bool listen = true}) =>
+  static Identity? identityOf(BuildContext context, {bool listen = true}) =>
       _InheritedAuth.of(context, listen: listen).state.worker;
 
   static AuthenticationController controllerOf(BuildContext context) =>
@@ -32,9 +32,10 @@ class _AuthenticationScopeState extends State<AuthenticationScope> {
   void initState() {
     super.initState();
     controller = Dependencies.of(context).authenticationController;
-    controller.addListener(_listener);
-    // Check if first-time setup is needed
-    controller.checkSetup();
+    controller
+      ..addListener(_listener)
+      // Check if first-time setup is needed
+      ..checkSetup();
   }
 
   void _listener() {
@@ -62,6 +63,7 @@ class _AuthenticationScopeState extends State<AuthenticationScope> {
 
 class _InheritedAuth extends InheritedWidget {
   const _InheritedAuth({required this.controller, required this.state, required super.child});
+
   final AuthenticationController controller;
   final AuthenticationState state;
 

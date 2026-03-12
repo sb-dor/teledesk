@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:teledesk/src/common/constant/pubspec.yaml.g.dart';
 import 'package:teledesk/src/common/localization/localization.dart';
 import 'package:teledesk/src/common/widget/scaffold_padding.dart';
 import 'package:teledesk/src/feature/developer/widget/logs_dialog.dart';
 import 'package:teledesk/src/feature/initialization/models/dependencies.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher_string.dart' as url_launcher;
 
 /// {@template developer_screen}

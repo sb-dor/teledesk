@@ -1,15 +1,15 @@
 import 'dart:async';
 
 import 'package:flutter/widgets.dart';
+import 'package:octopus/octopus.dart';
+import 'package:platform_info/platform_info.dart';
 import 'package:teledesk/src/common/util/app_zone.dart';
 import 'package:teledesk/src/common/util/error_util/error_util.dart';
-import 'package:teledesk/src/feature/initialization/widget/app.dart';
 import 'package:teledesk/src/common/widget/app_error.dart' deferred as app_error;
 import 'package:teledesk/src/feature/initialization/data/initialization.dart'
     deferred as initialization;
+import 'package:teledesk/src/feature/initialization/widget/app.dart';
 import 'package:teledesk/src/feature/settings/widget/settings_scope.dart';
-import 'package:octopus/octopus.dart';
-import 'package:platform_info/platform_info.dart';
 
 void main() => appZone(() async {
   // Splash screen

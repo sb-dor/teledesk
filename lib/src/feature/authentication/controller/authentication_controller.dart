@@ -1,8 +1,9 @@
 import 'package:control/control.dart';
 import 'package:flutter/foundation.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
-import 'package:teledesk/src/feature/authentication/data/worker_repository.dart';
-import 'package:teledesk/src/feature/authentication/model/worker.dart';
+import 'package:teledesk/src/feature/authentication/data/authentication_repository.dart';
+import 'package:teledesk/src/feature/authentication/model/identity.dart';
+import 'package:teledesk/src/feature/workers/data/worker_repository.dart';
 
 part 'authentication_controller.freezed.dart';
 
@@ -11,10 +12,14 @@ sealed class AuthenticationState with _$AuthenticationState {
   const AuthenticationState._();
 
   const factory AuthenticationState.idle() = Authentication$IdleState;
+
   const factory AuthenticationState.inProgress() = Authentication$InProgressState;
+
   const factory AuthenticationState.error(String? message) = Authentication$ErrorState;
-  const factory AuthenticationState.authenticated(Worker worker) =
+
+  const factory AuthenticationState.authenticated(Identity identity) =
       Authentication$AuthenticatedState;
+
   const factory AuthenticationState.needsSetup() = Authentication$NeedsSetupState;
 
   String? get error => switch (this) {
@@ -23,7 +28,18 @@ sealed class AuthenticationState with _$AuthenticationState {
   };
 
   Worker? get worker => switch (this) {
-    final Authentication$AuthenticatedState s => s.worker,
+    final Authentication$AuthenticatedState s => switch (s.identity) {
+      Worker() => s.identity as Worker,
+      Admin() => null,
+    },
+    _ => null,
+  };
+
+  Admin? get admin => switch (this) {
+    final Authentication$AuthenticatedState s => switch (s.identity) {
+      Worker() => null,
+      Admin() => s.identity as Admin,
+    },
     _ => null,
   };
 
@@ -33,10 +49,14 @@ sealed class AuthenticationState with _$AuthenticationState {
 final class AuthenticationController extends StateController<AuthenticationState>
     with DroppableControllerHandler {
   AuthenticationController({
+    required IAuthenticationRepository authenticationRepository,
     required IWorkerRepository workerRepository,
     super.initialState = const AuthenticationState.idle(),
-  }) : _repository = workerRepository;
+  }) : _iAuthenticationRepository = authenticationRepository,
 
+       _repository = workerRepository;
+
+  final IAuthenticationRepository _iAuthenticationRepository;
   final IWorkerRepository _repository;
 
   /// Check if first-time setup is needed
@@ -61,48 +81,31 @@ final class AuthenticationController extends StateController<AuthenticationState
       username: username,
       password: password,
       displayName: displayName,
-      role: WorkerRole.admin,
+      role: IdentityRole.admin,
       colorCode: '#6366F1',
     );
-    await _repository.updateStatus(worker.id, WorkerStatus.online);
-    setState(AuthenticationState.authenticated(worker.copyWith(status: WorkerStatus.online)));
+    await _repository.updateStatus(worker.id, IdentityStatus.online);
+    setState(AuthenticationState.authenticated(worker.copyWith(status: IdentityStatus.online)));
   }, error: (e, st) async => setState(AuthenticationState.error(e.toString())));
 
   /// Sign in with username and password
   void signIn({required String username, required String password}) => handle(() async {
     setState(const AuthenticationState.inProgress());
-    final worker = await _repository.authenticate(username, password);
+    final worker = await _iAuthenticationRepository.authenticate(username, password);
     if (worker == null) {
       setState(const AuthenticationState.error('Invalid username or password'));
       return;
     }
-    await _repository.updateStatus(worker.id, WorkerStatus.online);
-    setState(AuthenticationState.authenticated(worker.copyWith(status: WorkerStatus.online)));
+    await _repository.updateStatus(worker.id, IdentityStatus.online);
+    setState(AuthenticationState.authenticated(worker));
   }, error: (e, st) async => setState(AuthenticationState.error(e.toString())));
 
   /// Sign out
   void signOut() => handle(() async {
     final worker = state.worker;
     if (worker != null) {
-      await _repository.updateStatus(worker.id, WorkerStatus.offline);
+      await _repository.updateStatus(worker.id, IdentityStatus.offline);
     }
     setState(const AuthenticationState.idle());
   });
-
-  /// Add a worker (admin only)
-  void addWorker({
-    required String username,
-    required String password,
-    required String displayName,
-    required WorkerRole role,
-    required String colorCode,
-  }) => handle(() async {
-    await _repository.createWorker(
-      username: username,
-      password: password,
-      displayName: displayName,
-      role: role,
-      colorCode: colorCode,
-    );
-  }, error: (e, st) async => setState(AuthenticationState.error(e.toString())));
 }

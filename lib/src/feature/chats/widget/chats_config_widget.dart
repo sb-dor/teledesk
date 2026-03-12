@@ -9,17 +9,12 @@ import 'package:teledesk/src/feature/chats/widget/mobile/chats_mobile_widget.dar
 import 'package:teledesk/src/feature/initialization/models/dependencies.dart';
 
 class ChatsInhWidget extends InheritedWidget {
-  const ChatsInhWidget({
-    super.key,
-    required this.state,
-    required super.child,
-  });
+  const ChatsInhWidget({super.key, required this.state, required super.child});
 
   final ChatsConfigWidgetState state;
 
   static ChatsConfigWidgetState of(BuildContext context) {
-    final widget =
-        context.getElementForInheritedWidgetOfExactType<ChatsInhWidget>()?.widget;
+    final widget = context.getElementForInheritedWidgetOfExactType<ChatsInhWidget>()?.widget;
     assert(widget != null, 'ChatsInhWidget not found');
     return (widget as ChatsInhWidget).state;
   }
@@ -58,7 +53,7 @@ class ChatsConfigWidgetState extends State<ChatsConfigWidget> {
     _initialized = true;
     final deps = Dependencies.of(context);
     _conversationRepository = deps.conversationRepository;
-    final worker = AuthenticationScope.workerOf(context);
+    final worker = AuthenticationScope.identityOf(context);
     _chatsController = ChatsController(
       repository: _conversationRepository!,
       workerId: worker?.id ?? 0,
@@ -74,10 +69,10 @@ class ChatsConfigWidgetState extends State<ChatsConfigWidget> {
 
   @override
   Widget build(BuildContext context) => ChatsInhWidget(
-        state: this,
-        child: context.screenSizeMaybeWhen(
-          orElse: () => const ChatsDesktopWidget(),
-          phone: () => const ChatsMobileWidget(),
-        ),
-      );
+    state: this,
+    child: context.screenSizeMaybeWhen(
+      orElse: () => const ChatsDesktopWidget(),
+      phone: () => const ChatsMobileWidget(),
+    ),
+  );
 }

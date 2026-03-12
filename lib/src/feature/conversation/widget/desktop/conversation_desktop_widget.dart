@@ -4,27 +4,23 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:intl/intl.dart';
+import 'package:teledesk/src/feature/authentication/model/identity.dart';
 import 'package:teledesk/src/feature/authentication/widget/authentication_scope.dart';
 import 'package:teledesk/src/feature/chats/model/chat_message.dart';
 import 'package:teledesk/src/feature/chats/model/conversation.dart';
 import 'package:teledesk/src/feature/conversation/controller/conversation_controller.dart';
 import 'package:teledesk/src/feature/conversation/widget/conversation_config_widget.dart';
-import 'package:teledesk/src/feature/conversation/widget/controllers/conversation_data_controller.dart';
 import 'package:teledesk/src/feature/initialization/models/dependencies.dart';
-import 'package:teledesk/src/feature/authentication/data/worker_repository.dart';
-import 'package:teledesk/src/feature/authentication/model/worker.dart';
 import 'package:teledesk/src/feature/quick_replies/model/quick_reply.dart';
 
 class ConversationDesktopWidget extends StatefulWidget {
   const ConversationDesktopWidget({super.key});
 
   @override
-  State<ConversationDesktopWidget> createState() =>
-      _ConversationDesktopWidgetState();
+  State<ConversationDesktopWidget> createState() => _ConversationDesktopWidgetState();
 }
 
-class _ConversationDesktopWidgetState
-    extends State<ConversationDesktopWidget> {
+class _ConversationDesktopWidgetState extends State<ConversationDesktopWidget> {
   final ScrollController _scrollController = ScrollController();
   final TextEditingController _textController = TextEditingController();
   final FocusNode _focusNode = FocusNode();
@@ -86,19 +82,13 @@ class _ConversationDesktopWidgetState
     final file = result.files.first;
     if (file.bytes == null) return;
 
-    final isImage = file.extension != null &&
-        ['jpg', 'jpeg', 'png', 'gif', 'webp']
-            .contains(file.extension!.toLowerCase());
+    final isImage =
+        file.extension != null &&
+        ['jpg', 'jpeg', 'png', 'gif', 'webp'].contains(file.extension!.toLowerCase());
     if (isImage) {
-      scope.conversationController.sendPhoto(
-        file.bytes!,
-        file.name,
-      );
+      scope.conversationController.sendPhoto(file.bytes!, file.name);
     } else {
-      scope.conversationController.sendDocument(
-        file.bytes!,
-        file.name,
-      );
+      scope.conversationController.sendDocument(file.bytes!, file.name);
     }
   }
 
@@ -107,8 +97,7 @@ class _ConversationDesktopWidgetState
     ConversationConfigWidgetState scope,
     int currentWorkerId,
   ) {
-    final otherWorkers =
-        _allWorkers.where((w) => w.id != currentWorkerId).toList();
+    final otherWorkers = _allWorkers.where((w) => w.id != currentWorkerId).toList();
     showDialog<void>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -127,9 +116,7 @@ class _ConversationDesktopWidgetState
                         backgroundColor: _hexColor(w.colorCode),
                         child: Text(
                           w.initials,
-                          style: const TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold),
+                          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                         ),
                       ),
                       title: Text(w.displayName),
@@ -143,10 +130,7 @@ class _ConversationDesktopWidgetState
                 ),
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Cancel'),
-          ),
+          TextButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text('Cancel')),
         ],
       ),
     );
@@ -166,7 +150,7 @@ class _ConversationDesktopWidgetState
     final scope = ConversationInhWidget.of(context);
     final ctrl = scope.conversationController;
     final dataCtrl = scope.conversationDataController;
-    final currentWorker = AuthenticationScope.workerOf(context);
+    final currentWorker = AuthenticationScope.identityOf(context);
     final deps = Dependencies.of(context);
 
     return ListenableBuilder(
@@ -191,16 +175,10 @@ class _ConversationDesktopWidgetState
                 ? Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        conversation.displayName,
-                        style: const TextStyle(fontSize: 16),
-                      ),
+                      Text(conversation.displayName, style: const TextStyle(fontSize: 16)),
                       Text(
                         _statusLabel(conversation.status),
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: _statusColor(conversation.status),
-                        ),
+                        style: TextStyle(fontSize: 12, color: _statusColor(conversation.status)),
                       ),
                     ],
                   )
@@ -217,18 +195,13 @@ class _ConversationDesktopWidgetState
                     ),
                   ),
                 ),
-              if (conversation != null &&
-                  conversation.status != ConversationStatus.finished)
+              if (conversation != null && conversation.status != ConversationStatus.finished)
                 PopupMenuButton<String>(
                   icon: const Icon(Icons.more_vert_rounded),
                   onSelected: (value) {
                     switch (value) {
                       case 'transfer':
-                        _showTransferDialog(
-                          context,
-                          scope,
-                          currentWorker?.id ?? 0,
-                        );
+                        _showTransferDialog(context, scope, currentWorker?.id ?? 0);
                       case 'allow_finish':
                         ctrl.allowUserToFinish();
                       case 'finish':
@@ -271,8 +244,7 @@ class _ConversationDesktopWidgetState
               if (state is Conversation$ErrorState)
                 Container(
                   color: Theme.of(context).colorScheme.errorContainer,
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   child: Row(
                     children: [
                       Icon(
@@ -284,10 +256,7 @@ class _ConversationDesktopWidgetState
                       Expanded(
                         child: Text(
                           state.message,
-                          style: TextStyle(
-                            color:
-                                Theme.of(context).colorScheme.onErrorContainer,
-                          ),
+                          style: TextStyle(color: Theme.of(context).colorScheme.onErrorContainer),
                         ),
                       ),
                     ],
@@ -299,8 +268,9 @@ class _ConversationDesktopWidgetState
                 child: state is Conversation$LoadingState
                     ? const Center(child: CircularProgressIndicator())
                     : StreamBuilder<List<ChatMessage>>(
-                        stream: deps.conversationRepository
-                            .watchMessages(scope.widget.conversationId),
+                        stream: deps.conversationRepository.watchMessages(
+                          scope.widget.conversationId,
+                        ),
                         builder: (ctx, snapshot) {
                           final messages = snapshot.data ?? [];
                           if (messages.isNotEmpty) {
@@ -341,10 +311,7 @@ class _ConversationDesktopWidgetState
                   // Send typing action debounced
                   _typingTimer?.cancel();
                   if (text.isNotEmpty && !dataCtrl.isNoteMode) {
-                    _typingTimer = Timer(
-                      const Duration(milliseconds: 500),
-                      ctrl.sendTypingAction,
-                    );
+                    _typingTimer = Timer(const Duration(milliseconds: 500), ctrl.sendTypingAction);
                   }
                 },
                 onSend: () => _sendMessage(scope),
@@ -358,27 +325,22 @@ class _ConversationDesktopWidgetState
     );
   }
 
-  void _confirmFinish(
-      BuildContext context, ConversationController ctrl) {
+  void _confirmFinish(BuildContext context, ConversationController ctrl) {
     showDialog<void>(
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Finish Conversation'),
         content: const Text(
-            'Are you sure you want to close this conversation? The user will be notified.'),
+          'Are you sure you want to close this conversation? The user will be notified.',
+        ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Cancel'),
-          ),
+          TextButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text('Cancel')),
           FilledButton(
             onPressed: () {
               Navigator.of(ctx).pop();
               ctrl.finishConversation();
             },
-            style: FilledButton.styleFrom(
-              backgroundColor: Theme.of(ctx).colorScheme.error,
-            ),
+            style: FilledButton.styleFrom(backgroundColor: Theme.of(ctx).colorScheme.error),
             child: const Text('Finish'),
           ),
         ],
@@ -387,18 +349,18 @@ class _ConversationDesktopWidgetState
   }
 
   String _statusLabel(ConversationStatus status) => switch (status) {
-        ConversationStatus.open => 'Open',
-        ConversationStatus.inProgress => 'In Progress',
-        ConversationStatus.finishRequested => 'Finish Requested',
-        ConversationStatus.finished => 'Closed',
-      };
+    ConversationStatus.open => 'Open',
+    ConversationStatus.inProgress => 'In Progress',
+    ConversationStatus.finishRequested => 'Finish Requested',
+    ConversationStatus.finished => 'Closed',
+  };
 
   Color _statusColor(ConversationStatus status) => switch (status) {
-        ConversationStatus.open => Colors.blue,
-        ConversationStatus.inProgress => Colors.orange,
-        ConversationStatus.finishRequested => Colors.purple,
-        ConversationStatus.finished => Colors.grey,
-      };
+    ConversationStatus.open => Colors.blue,
+    ConversationStatus.inProgress => Colors.orange,
+    ConversationStatus.finishRequested => Colors.purple,
+    ConversationStatus.finished => Colors.grey,
+  };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -424,9 +386,9 @@ class _MessageList extends StatelessWidget {
       return Center(
         child: Text(
           'No messages yet',
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
+          style: Theme.of(
+            context,
+          ).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
         ),
       );
     }
@@ -436,15 +398,11 @@ class _MessageList extends StatelessWidget {
       itemCount: messages.length,
       itemBuilder: (ctx, i) {
         final msg = messages[i];
-        final showDate = i == 0 ||
-            !_isSameDay(messages[i - 1].sentAt, msg.sentAt);
+        final showDate = i == 0 || !_isSameDay(messages[i - 1].sentAt, msg.sentAt);
         return Column(
           children: [
             if (showDate) _DateDivider(date: msg.sentAt),
-            _MessageBubble(
-              message: msg,
-              allWorkers: allWorkers,
-            ),
+            _MessageBubble(message: msg, allWorkers: allWorkers),
           ],
         );
       },
@@ -464,9 +422,7 @@ class _DateDivider extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final today = DateTime.now();
-    final isToday = date.year == today.year &&
-        date.month == today.month &&
-        date.day == today.day;
+    final isToday = date.year == today.year && date.month == today.month && date.day == today.day;
     final label = isToday ? 'Today' : DateFormat.MMMEd().format(date);
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 12),
@@ -490,10 +446,7 @@ class _DateDivider extends StatelessWidget {
 }
 
 class _MessageBubble extends StatelessWidget {
-  const _MessageBubble({
-    required this.message,
-    required this.allWorkers,
-  });
+  const _MessageBubble({required this.message, required this.allWorkers});
 
   final ChatMessage message;
   final List<Worker> allWorkers;
@@ -537,25 +490,19 @@ class _MessageBubble extends StatelessWidget {
                   const SizedBox(width: 6),
                   Text(
                     '· ${_workerName(message.sentByWorkerId)}',
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      color: Colors.amber.shade700,
-                    ),
+                    style: theme.textTheme.labelSmall?.copyWith(color: Colors.amber.shade700),
                   ),
                   const Spacer(),
                   Text(
                     DateFormat.Hm().format(message.sentAt),
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      color: Colors.amber.shade700,
-                    ),
+                    style: theme.textTheme.labelSmall?.copyWith(color: Colors.amber.shade700),
                   ),
                 ],
               ),
               const SizedBox(height: 8),
               Text(
                 message.text ?? '',
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: Colors.amber.shade900,
-                ),
+                style: theme.textTheme.bodyMedium?.copyWith(color: Colors.amber.shade900),
               ),
             ],
           ),
@@ -564,16 +511,11 @@ class _MessageBubble extends StatelessWidget {
     }
 
     final isFromBot = message.isFromBot;
-    final alignment =
-        isFromBot ? CrossAxisAlignment.end : CrossAxisAlignment.start;
-    final mainAlignment =
-        isFromBot ? MainAxisAlignment.end : MainAxisAlignment.start;
+    final alignment = isFromBot ? CrossAxisAlignment.end : CrossAxisAlignment.start;
+    final mainAlignment = isFromBot ? MainAxisAlignment.end : MainAxisAlignment.start;
 
-    final bubbleColor = isFromBot
-        ? colorScheme.primary
-        : colorScheme.surfaceContainerHighest;
-    final textColor =
-        isFromBot ? colorScheme.onPrimary : colorScheme.onSurface;
+    final bubbleColor = isFromBot ? colorScheme.primary : colorScheme.surfaceContainerHighest;
+    final textColor = isFromBot ? colorScheme.onPrimary : colorScheme.onSurface;
     final timeColor = isFromBot
         ? colorScheme.onPrimary.withOpacity(0.7)
         : colorScheme.onSurfaceVariant;
@@ -593,10 +535,7 @@ class _MessageBubble extends StatelessWidget {
                   backgroundColor: colorScheme.surfaceContainerHighest,
                   child: Text(
                     '?',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: colorScheme.onSurfaceVariant,
-                    ),
+                    style: TextStyle(fontSize: 12, color: colorScheme.onSurfaceVariant),
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -614,8 +553,7 @@ class _MessageBubble extends StatelessWidget {
                         bottomRight: Radius.circular(isFromBot ? 4 : 16),
                       ),
                     ),
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 12, vertical: 8),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
@@ -671,17 +609,12 @@ class _MessageContent extends StatelessWidget {
                 color: Colors.black12,
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: const Center(
-                child: Icon(Icons.photo_rounded, size: 40, color: Colors.grey),
-              ),
+              child: const Center(child: Icon(Icons.photo_rounded, size: 40, color: Colors.grey)),
             ),
             if (message.text != null && message.text!.isNotEmpty)
               Padding(
                 padding: const EdgeInsets.only(top: 4),
-                child: Text(
-                  message.text!,
-                  style: TextStyle(color: textColor),
-                ),
+                child: Text(message.text!, style: TextStyle(color: textColor)),
               ),
           ],
         );
@@ -805,9 +738,7 @@ class _QuickRepliesPanel extends StatelessWidget {
       constraints: const BoxConstraints(maxHeight: 200),
       decoration: BoxDecoration(
         color: theme.colorScheme.surface,
-        border: Border(
-          top: BorderSide(color: theme.colorScheme.outlineVariant),
-        ),
+        border: Border(top: BorderSide(color: theme.colorScheme.outlineVariant)),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.08),
@@ -885,9 +816,7 @@ class _MessageInputBar extends StatelessWidget {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    final bgColor = isNoteMode
-        ? const Color(0xFFFFF8E1)
-        : colorScheme.surfaceContainerLow;
+    final bgColor = isNoteMode ? const Color(0xFFFFF8E1) : colorScheme.surfaceContainerLow;
 
     if (isFinished) {
       return Container(
@@ -896,9 +825,7 @@ class _MessageInputBar extends StatelessWidget {
         child: Center(
           child: Text(
             'This conversation is closed',
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: colorScheme.onSurfaceVariant,
-            ),
+            style: theme.textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant),
           ),
         ),
       );
@@ -917,14 +844,11 @@ class _MessageInputBar extends StatelessWidget {
                 padding: const EdgeInsets.only(bottom: 4),
                 child: Row(
                   children: [
-                    const Icon(Icons.lock_rounded,
-                        size: 14, color: Colors.amber),
+                    const Icon(Icons.lock_rounded, size: 14, color: Colors.amber),
                     const SizedBox(width: 4),
                     Text(
                       'Internal Note — not visible to user',
-                      style: theme.textTheme.labelSmall?.copyWith(
-                        color: Colors.amber.shade800,
-                      ),
+                      style: theme.textTheme.labelSmall?.copyWith(color: Colors.amber.shade800),
                     ),
                   ],
                 ),
@@ -964,13 +888,8 @@ class _MessageInputBar extends StatelessWidget {
                         borderSide: BorderSide.none,
                       ),
                       filled: true,
-                      fillColor: isNoteMode
-                          ? Colors.amber.shade50
-                          : colorScheme.surface,
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 10,
-                      ),
+                      fillColor: isNoteMode ? Colors.amber.shade50 : colorScheme.surface,
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                     ),
                     onChanged: onTextChanged,
                     textInputAction: TextInputAction.newline,
@@ -1027,17 +946,14 @@ class _SendButtonState extends State<_SendButton> {
 
   @override
   Widget build(BuildContext context) {
-    final canSend =
-        widget.textController.text.trim().isNotEmpty && !widget.isSending;
+    final canSend = widget.textController.text.trim().isNotEmpty && !widget.isSending;
     final colorScheme = Theme.of(context).colorScheme;
     return AnimatedContainer(
       duration: const Duration(milliseconds: 200),
       child: FilledButton(
         onPressed: canSend ? widget.onSend : null,
         style: FilledButton.styleFrom(
-          backgroundColor: widget.isNoteMode
-              ? Colors.amber
-              : colorScheme.primary,
+          backgroundColor: widget.isNoteMode ? Colors.amber : colorScheme.primary,
           foregroundColor: widget.isNoteMode ? Colors.black87 : null,
           shape: const CircleBorder(),
           padding: const EdgeInsets.all(12),
@@ -1047,17 +963,9 @@ class _SendButtonState extends State<_SendButton> {
             ? const SizedBox(
                 width: 18,
                 height: 18,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  color: Colors.white,
-                ),
+                child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
               )
-            : Icon(
-                widget.isNoteMode
-                    ? Icons.save_rounded
-                    : Icons.send_rounded,
-                size: 18,
-              ),
+            : Icon(widget.isNoteMode ? Icons.save_rounded : Icons.send_rounded, size: 18),
       ),
     );
   }

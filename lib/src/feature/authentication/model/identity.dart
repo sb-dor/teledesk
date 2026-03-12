@@ -1,11 +1,48 @@
-import 'package:flutter/foundation.dart';
+import 'package:meta/meta.dart';
 
-enum WorkerRole { admin, worker }
+enum IdentityRole { admin, worker }
 
-enum WorkerStatus { online, away, busy, offline }
+enum IdentityStatus { online, away, busy, offline }
 
 @immutable
-class Worker {
+sealed class Identity {
+  const Identity();
+
+  int get id;
+
+  String get fullName;
+
+  IdentityRole get identityRole;
+}
+
+class Admin extends Identity {
+  const Admin({
+    required this.id,
+    required this.username,
+    required this.displayName,
+    required this.colorCode,
+    required this.status,
+    required this.isActive,
+    required this.createdAt,
+  });
+
+  @override
+  final int id;
+  final String username;
+  final String displayName;
+  final String colorCode;
+  final IdentityStatus status;
+  final bool isActive;
+  final DateTime createdAt;
+
+  @override
+  String get fullName => username;
+
+  @override
+  IdentityRole get identityRole => IdentityRole.admin;
+}
+
+class Worker extends Identity {
   const Worker({
     required this.id,
     required this.username,
@@ -17,16 +54,15 @@ class Worker {
     required this.createdAt,
   });
 
+  @override
   final int id;
   final String username;
   final String displayName;
-  final WorkerRole role;
+  final IdentityRole role;
   final String colorCode;
-  final WorkerStatus status;
+  final IdentityStatus status;
   final bool isActive;
   final DateTime createdAt;
-
-  bool get isAdmin => role == WorkerRole.admin;
 
   String get initials {
     final parts = displayName.trim().split(' ');
@@ -40,9 +76,9 @@ class Worker {
     int? id,
     String? username,
     String? displayName,
-    WorkerRole? role,
+    IdentityRole? role,
     String? colorCode,
-    WorkerStatus? status,
+    IdentityStatus? status,
     bool? isActive,
     DateTime? createdAt,
   }) => Worker(
@@ -55,4 +91,10 @@ class Worker {
     isActive: isActive ?? this.isActive,
     createdAt: createdAt ?? this.createdAt,
   );
+
+  @override
+  String get fullName => username;
+
+  @override
+  IdentityRole get identityRole => IdentityRole.worker;
 }

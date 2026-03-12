@@ -3,16 +3,21 @@ import 'dart:async';
 import 'package:control/control.dart';
 import 'package:drift/drift.dart' as drift;
 import 'package:flutter/foundation.dart';
+import 'package:l/l.dart';
+import 'package:platform_info/platform_info.dart';
+import 'package:rxdart/rxdart.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:teledesk/src/common/constant/config.dart';
 import 'package:teledesk/src/common/constant/pubspec.yaml.g.dart';
 import 'package:teledesk/src/common/controller/controller_observer.dart';
 import 'package:teledesk/src/common/database/database.dart';
 import 'package:teledesk/src/common/database/tables/log_table.dart';
 import 'package:teledesk/src/common/model/app_metadata.dart';
+import 'package:teledesk/src/common/util/crypto_util.dart';
 import 'package:teledesk/src/common/util/log_buffer.dart';
 import 'package:teledesk/src/common/util/screen_util.dart';
 import 'package:teledesk/src/feature/authentication/controller/authentication_controller.dart';
-import 'package:teledesk/src/feature/authentication/data/worker_repository.dart';
+import 'package:teledesk/src/feature/authentication/data/authentication_repository.dart';
 import 'package:teledesk/src/feature/bot_settings/data/bot_settings_repository.dart';
 import 'package:teledesk/src/feature/chats/data/conversation_repository.dart';
 import 'package:teledesk/src/feature/initialization/data/platform/platform_initialization.dart';
@@ -20,10 +25,7 @@ import 'package:teledesk/src/feature/initialization/models/dependencies.dart';
 import 'package:teledesk/src/feature/quick_replies/data/quick_reply_repository.dart';
 import 'package:teledesk/src/feature/telegram/controller/telegram_polling_controller.dart';
 import 'package:teledesk/src/feature/telegram/data/telegram_repository.dart';
-import 'package:l/l.dart';
-import 'package:platform_info/platform_info.dart';
-import 'package:rxdart/rxdart.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:teledesk/src/feature/workers/data/worker_repository.dart';
 
 /// Initializes the app and returns a [Dependencies] object
 Future<Dependencies> $initializeDependencies({
@@ -77,8 +79,8 @@ final Map<String, _InitializationStep> _initializationSteps = <String, _Initiali
       : AppDatabase.defaults(name: 'teledesk_db'),
   'Initialize Telegram repository': (dependencies) =>
       dependencies.telegramRepository = TelegramRepositoryImpl(botToken: Config.telegramBotToken),
-  'Initialize Worker repository': (dependencies) =>
-      dependencies.workerRepository = WorkerRepositoryImpl(database: dependencies.database),
+  'Initialize Worker repository': (dependencies) => dependencies.workerRepository =
+      WorkerRepositoryImpl(database: dependencies.database, cryptoUtil: CryptoUtil()),
   'Initialize Conversation repository': (dependencies) => dependencies.conversationRepository =
       ConversationRepositoryImpl(database: dependencies.database),
   'Initialize QuickReply repository': (dependencies) =>
@@ -94,8 +96,14 @@ final Map<String, _InitializationStep> _initializationSteps = <String, _Initiali
         conversationRepository: dependencies.conversationRepository,
         pollingTimeoutSeconds: Config.pollingTimeoutSeconds,
       ),
-  'Prepare authentication controller': (dependencies) => dependencies.authenticationController =
-      AuthenticationController(workerRepository: dependencies.workerRepository),
+  'Prepare authentication controller': (dependencies) =>
+      dependencies.authenticationController = AuthenticationController(
+        workerRepository: dependencies.workerRepository,
+        authenticationRepository: AuthenticationRepositoryImpl(
+          appDatabase: dependencies.database,
+          cryptoUtil: CryptoUtil(),
+        ),
+      ),
 
   // The 'Shrink database' step will only be included in non-release builds.
   if (!kReleaseMode)

@@ -10,6 +10,14 @@ class TelegramUser {
     this.username,
   });
 
+  factory TelegramUser.fromJson(Map<String, dynamic> json) => TelegramUser(
+    id: json['id'] as int,
+    isBot: json['is_bot'] as bool? ?? false,
+    firstName: json['first_name'] as String? ?? '',
+    lastName: json['last_name'] as String?,
+    username: json['username'] as String?,
+  );
+
   final int id;
   final bool isBot;
   final String firstName;
@@ -20,12 +28,4 @@ class TelegramUser {
     final parts = [firstName, lastName].where((p) => p != null && p.isNotEmpty);
     return parts.isNotEmpty ? parts.join(' ') : 'User #$id';
   }
-
-  factory TelegramUser.fromJson(Map<String, dynamic> json) => TelegramUser(
-    id: json['id'] as int,
-    isBot: json['is_bot'] as bool? ?? false,
-    firstName: json['first_name'] as String? ?? '',
-    lastName: json['last_name'] as String?,
-    username: json['username'] as String?,
-  );
 }

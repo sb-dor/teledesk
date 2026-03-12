@@ -11,8 +11,6 @@ class ChatsScreen extends StatelessWidget {
   const ChatsScreen({super.key});
 
   @override
-  Widget build(BuildContext context) => MainNavigation(
-        currentRoute: Routes.chats,
-        child: const ChatsConfigWidget(),
-      );
+  Widget build(BuildContext context) =>
+      const MainNavigation(currentRoute: Routes.chats, child: ChatsConfigWidget());
 }

@@ -1,6 +1,6 @@
 import 'package:control/control.dart';
-import 'package:teledesk/src/common/util/error_util/error_util.dart';
 import 'package:l/l.dart';
+import 'package:teledesk/src/common/util/error_util/error_util.dart';
 
 /// Observer for [Controller], react to changes in any controller.
 final class ControllerObserver implements IControllerObserver {

@@ -1,16 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:teledesk/src/feature/authentication/model/worker.dart';
+import 'package:teledesk/src/feature/authentication/model/identity.dart';
 import 'package:teledesk/src/feature/initialization/models/dependencies.dart';
 import 'package:teledesk/src/feature/workers/controller/workers_controller.dart';
 
-const List<String> _kColors = [
-  '#6366F1',
-  '#3B82F6',
-  '#10B981',
-  '#F59E0B',
-  '#EF4444',
-  '#8B5CF6',
-];
+const List<String> _kColors = ['#6366F1', '#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6'];
 
 /// {@template workers_screen}
 /// WorkersScreen widget.
@@ -30,8 +23,7 @@ class _WorkersScreenState extends State<WorkersScreen> {
   void initState() {
     super.initState();
     final deps = Dependencies.of(context);
-    _controller =
-        WorkersController(repository: deps.workerRepository)..load();
+    _controller = WorkersController(repository: deps.workerRepository)..load();
     _controller.addListener(_onStateChanged);
   }
 
@@ -60,15 +52,11 @@ class _WorkersScreenState extends State<WorkersScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.error_outline_rounded,
-                size: 48, color: Colors.red),
+            const Icon(Icons.error_outline_rounded, size: 48, color: Colors.red),
             const SizedBox(height: 16),
             Text(state.message, textAlign: TextAlign.center),
             const SizedBox(height: 16),
-            FilledButton(
-              onPressed: _controller.load,
-              child: const Text('Retry'),
-            ),
+            FilledButton(onPressed: _controller.load, child: const Text('Retry')),
           ],
         ),
       );
@@ -87,16 +75,12 @@ class _WorkersScreenState extends State<WorkersScreen> {
               const SizedBox(height: 16),
               Text(
                 'No workers yet',
-                style: theme.textTheme.titleMedium?.copyWith(
-                  color: colorScheme.onSurfaceVariant,
-                ),
+                style: theme.textTheme.titleMedium?.copyWith(color: colorScheme.onSurfaceVariant),
               ),
               const SizedBox(height: 8),
               Text(
                 'Tap + to add a worker',
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: colorScheme.onSurfaceVariant,
-                ),
+                style: theme.textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
               ),
             ],
           ),
@@ -108,8 +92,7 @@ class _WorkersScreenState extends State<WorkersScreen> {
           separatorBuilder: (_, __) => const SizedBox(height: 8),
           itemBuilder: (ctx, i) => _WorkerCard(
             worker: workers[i],
-            onChangePassword: () =>
-                _showChangePasswordDialog(context, workers[i].id),
+            onChangePassword: () => _showChangePasswordDialog(context, workers[i].id),
             onDeactivate: () => _confirmDeactivate(context, workers[i]),
           ),
         );
@@ -135,9 +118,9 @@ class _WorkersScreenState extends State<WorkersScreen> {
     final nameCtrl = TextEditingController();
     final usernameCtrl = TextEditingController();
     final passwordCtrl = TextEditingController();
-    WorkerRole selectedRole = WorkerRole.worker;
-    String selectedColor = _kColors.first;
-    bool obscure = true;
+    var selectedRole = IdentityRole.worker;
+    var selectedColor = _kColors.first;
+    var obscure = true;
 
     showDialog<void>(
       context: context,
@@ -159,8 +142,7 @@ class _WorkersScreenState extends State<WorkersScreen> {
                     prefixIcon: Icon(Icons.person_rounded),
                   ),
                   textInputAction: TextInputAction.next,
-                  validator: (v) =>
-                      v == null || v.trim().isEmpty ? 'Required' : null,
+                  validator: (v) => v == null || v.trim().isEmpty ? 'Required' : null,
                 ),
                 const SizedBox(height: 12),
                 TextFormField(
@@ -171,8 +153,7 @@ class _WorkersScreenState extends State<WorkersScreen> {
                     prefixIcon: Icon(Icons.alternate_email_rounded),
                   ),
                   textInputAction: TextInputAction.next,
-                  validator: (v) =>
-                      v == null || v.trim().isEmpty ? 'Required' : null,
+                  validator: (v) => v == null || v.trim().isEmpty ? 'Required' : null,
                 ),
                 const SizedBox(height: 12),
                 TextFormField(
@@ -181,46 +162,34 @@ class _WorkersScreenState extends State<WorkersScreen> {
                     labelText: 'Password',
                     prefixIcon: const Icon(Icons.lock_rounded),
                     suffixIcon: IconButton(
-                      icon: Icon(
-                        obscure
-                            ? Icons.visibility_off_rounded
-                            : Icons.visibility_rounded,
-                      ),
+                      icon: Icon(obscure ? Icons.visibility_off_rounded : Icons.visibility_rounded),
                       onPressed: () => setLocal(() => obscure = !obscure),
                     ),
                   ),
                   obscureText: obscure,
-                  validator: (v) =>
-                      v == null || v.length < 6 ? 'Min 6 characters' : null,
+                  validator: (v) => v == null || v.length < 6 ? 'Min 6 characters' : null,
                 ),
                 const SizedBox(height: 16),
-                Text(
-                  'Role',
-                  style: Theme.of(ctx).textTheme.labelMedium,
-                ),
+                Text('Role', style: Theme.of(ctx).textTheme.labelMedium),
                 const SizedBox(height: 6),
-                SegmentedButton<WorkerRole>(
+                SegmentedButton<IdentityRole>(
                   segments: const [
                     ButtonSegment(
-                      value: WorkerRole.worker,
+                      value: IdentityRole.worker,
                       label: Text('Worker'),
                       icon: Icon(Icons.support_agent_rounded),
                     ),
                     ButtonSegment(
-                      value: WorkerRole.admin,
+                      value: IdentityRole.admin,
                       label: Text('Admin'),
                       icon: Icon(Icons.admin_panel_settings_rounded),
                     ),
                   ],
                   selected: {selectedRole},
-                  onSelectionChanged: (s) =>
-                      setLocal(() => selectedRole = s.first),
+                  onSelectionChanged: (s) => setLocal(() => selectedRole = s.first),
                 ),
                 const SizedBox(height: 16),
-                Text(
-                  'Color',
-                  style: Theme.of(ctx).textTheme.labelMedium,
-                ),
+                Text('Color', style: Theme.of(ctx).textTheme.labelMedium),
                 const SizedBox(height: 8),
                 Wrap(
                   spacing: 8,
@@ -240,17 +209,11 @@ class _WorkersScreenState extends State<WorkersScreen> {
                             width: 2.5,
                           ),
                           boxShadow: isSelected
-                              ? [
-                                  BoxShadow(
-                                    color: color.withOpacity(0.5),
-                                    blurRadius: 6,
-                                  ),
-                                ]
+                              ? [BoxShadow(color: color.withOpacity(0.5), blurRadius: 6)]
                               : null,
                         ),
                         child: isSelected
-                            ? const Icon(Icons.check_rounded,
-                                color: Colors.white, size: 16)
+                            ? const Icon(Icons.check_rounded, color: Colors.white, size: 16)
                             : null,
                       ),
                     );
@@ -260,10 +223,7 @@ class _WorkersScreenState extends State<WorkersScreen> {
             ),
           ),
           actions: [
-            TextButton(
-              onPressed: () => Navigator.of(ctx).pop(),
-              child: const Text('Cancel'),
-            ),
+            TextButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text('Cancel')),
             FilledButton(
               onPressed: () {
                 if (formKey.currentState!.validate()) {
@@ -287,7 +247,7 @@ class _WorkersScreenState extends State<WorkersScreen> {
 
   void _showChangePasswordDialog(BuildContext context, int workerId) {
     final ctrl = TextEditingController();
-    bool obscure = true;
+    var obscure = true;
     showDialog<void>(
       context: context,
       builder: (ctx) => StatefulBuilder(
@@ -300,28 +260,21 @@ class _WorkersScreenState extends State<WorkersScreen> {
               labelText: 'New Password',
               prefixIcon: const Icon(Icons.lock_rounded),
               suffixIcon: IconButton(
-                icon: Icon(
-                  obscure
-                      ? Icons.visibility_off_rounded
-                      : Icons.visibility_rounded,
-                ),
+                icon: Icon(obscure ? Icons.visibility_off_rounded : Icons.visibility_rounded),
                 onPressed: () => setLocal(() => obscure = !obscure),
               ),
             ),
           ),
           actions: [
-            TextButton(
-              onPressed: () => Navigator.of(ctx).pop(),
-              child: const Text('Cancel'),
-            ),
+            TextButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text('Cancel')),
             FilledButton(
               onPressed: () {
                 if (ctrl.text.length >= 6) {
                   Navigator.of(ctx).pop();
                   _controller.changePassword(workerId, ctrl.text);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Password updated')),
-                  );
+                  ScaffoldMessenger.of(
+                    context,
+                  ).showSnackBar(const SnackBar(content: Text('Password updated')));
                 }
               },
               child: const Text('Save'),
@@ -341,18 +294,13 @@ class _WorkersScreenState extends State<WorkersScreen> {
           'Are you sure you want to deactivate ${worker.displayName}? They will no longer be able to log in.',
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Cancel'),
-          ),
+          TextButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text('Cancel')),
           FilledButton(
             onPressed: () {
               Navigator.of(ctx).pop();
               _controller.deactivate(worker.id);
             },
-            style: FilledButton.styleFrom(
-              backgroundColor: Theme.of(ctx).colorScheme.error,
-            ),
+            style: FilledButton.styleFrom(backgroundColor: Theme.of(ctx).colorScheme.error),
             child: const Text('Deactivate'),
           ),
         ],
@@ -381,11 +329,11 @@ class _WorkerCard extends StatelessWidget {
   final VoidCallback onDeactivate;
 
   Color get _statusColor => switch (worker.status) {
-        WorkerStatus.online => Colors.green,
-        WorkerStatus.away => Colors.amber,
-        WorkerStatus.busy => Colors.red,
-        WorkerStatus.offline => Colors.grey,
-      };
+    IdentityStatus.online => Colors.green,
+    IdentityStatus.away => Colors.amber,
+    IdentityStatus.busy => Colors.red,
+    IdentityStatus.offline => Colors.grey,
+  };
 
   @override
   Widget build(BuildContext context) {
@@ -406,10 +354,7 @@ class _WorkerCard extends StatelessWidget {
                   backgroundColor: workerColor.withOpacity(0.2),
                   child: Text(
                     worker.initials,
-                    style: TextStyle(
-                      color: workerColor,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: TextStyle(color: workerColor, fontWeight: FontWeight.bold),
                   ),
                 ),
                 Positioned(
@@ -436,27 +381,24 @@ class _WorkerCard extends StatelessWidget {
                     children: [
                       Text(
                         worker.displayName,
-                        style: theme.textTheme.titleSmall?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
+                        style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
                       ),
                       const SizedBox(width: 8),
                       // Role badge
                       Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 2),
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                         decoration: BoxDecoration(
-                          color: worker.isAdmin
+                          color: worker.identityRole == IdentityRole.admin
                               ? colorScheme.primaryContainer
                               : colorScheme.surfaceContainerHighest,
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: Text(
-                          worker.isAdmin ? 'Admin' : 'Worker',
+                          worker.identityRole == IdentityRole.admin ? 'Admin' : 'Worker',
                           style: TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.w600,
-                            color: worker.isAdmin
+                            color: worker.identityRole == IdentityRole.admin
                                 ? colorScheme.primary
                                 : colorScheme.onSurfaceVariant,
                           ),
@@ -467,9 +409,7 @@ class _WorkerCard extends StatelessWidget {
                   const SizedBox(height: 2),
                   Text(
                     '@${worker.username}',
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: colorScheme.onSurfaceVariant,
-                    ),
+                    style: theme.textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
                   ),
                 ],
               ),
@@ -479,10 +419,7 @@ class _WorkerCard extends StatelessWidget {
               width: 12,
               height: 12,
               margin: const EdgeInsets.symmetric(horizontal: 8),
-              decoration: BoxDecoration(
-                color: workerColor,
-                shape: BoxShape.circle,
-              ),
+              decoration: BoxDecoration(color: workerColor, shape: BoxShape.circle),
             ),
             // Menu
             PopupMenuButton<String>(
@@ -504,14 +441,8 @@ class _WorkerCard extends StatelessWidget {
                   value: 'deactivate',
                   child: ListTile(
                     dense: true,
-                    leading: Icon(
-                      Icons.person_off_rounded,
-                      color: theme.colorScheme.error,
-                    ),
-                    title: Text(
-                      'Deactivate',
-                      style: TextStyle(color: theme.colorScheme.error),
-                    ),
+                    leading: Icon(Icons.person_off_rounded, color: theme.colorScheme.error),
+                    title: Text('Deactivate', style: TextStyle(color: theme.colorScheme.error)),
                   ),
                 ),
               ],

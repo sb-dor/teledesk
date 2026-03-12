@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:octopus/octopus.dart';
 import 'package:teledesk/src/feature/authentication/widget/signin_screen.dart';
 import 'package:teledesk/src/feature/authentication/widget/signup_screen.dart';
 import 'package:teledesk/src/feature/bot_settings/widget/bot_settings_screen.dart';
@@ -8,7 +9,6 @@ import 'package:teledesk/src/feature/dashboard/widget/dashboard_screen.dart';
 import 'package:teledesk/src/feature/developer/widget/developer_screen.dart';
 import 'package:teledesk/src/feature/settings/widget/settings_screen.dart';
 import 'package:teledesk/src/feature/workers/widget/workers_screen.dart';
-import 'package:octopus/octopus.dart';
 
 enum Routes with OctopusRoute {
   signin('signin', title: 'Sign In'),

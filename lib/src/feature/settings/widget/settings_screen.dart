@@ -3,7 +3,7 @@ import 'package:octopus/octopus.dart';
 import 'package:teledesk/src/common/model/app_metadata.dart';
 import 'package:teledesk/src/common/router/routes.dart';
 import 'package:teledesk/src/common/widget/main_navigation.dart';
-import 'package:teledesk/src/feature/authentication/model/worker.dart';
+import 'package:teledesk/src/feature/authentication/model/identity.dart';
 import 'package:teledesk/src/feature/authentication/widget/authentication_scope.dart';
 import 'package:teledesk/src/feature/initialization/models/dependencies.dart';
 import 'package:teledesk/src/feature/settings/widget/settings_scope.dart';
@@ -19,28 +19,20 @@ class SettingsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final worker = AuthenticationScope.workerOf(context);
+    final worker = AuthenticationScope.identityOf(context);
     final metadata = Dependencies.of(context).metadata;
     final themeMode = SettingsScope.themeModeOf(context);
     final isDark = themeMode == ThemeMode.dark;
 
     return MainNavigation(
       currentRoute: Routes.settings,
-      child: _SettingsScaffold(
-        worker: worker,
-        isDark: isDark,
-        metadata: metadata,
-      ),
+      child: _SettingsScaffold(worker: worker as Worker, isDark: isDark, metadata: metadata),
     );
   }
 }
 
 class _SettingsScaffold extends StatelessWidget {
-  const _SettingsScaffold({
-    required this.worker,
-    required this.isDark,
-    required this.metadata,
-  });
+  const _SettingsScaffold({required this.worker, required this.isDark, required this.metadata});
 
   final Worker? worker;
   final bool isDark;
@@ -81,8 +73,7 @@ class _SettingsScaffold extends StatelessWidget {
                       children: [
                         Text(
                           worker?.displayName ?? 'Unknown',
-                          style: theme.textTheme.titleMedium
-                              ?.copyWith(fontWeight: FontWeight.bold),
+                          style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
                         ),
                         const SizedBox(height: 2),
                         Text(
@@ -93,14 +84,13 @@ class _SettingsScaffold extends StatelessWidget {
                         ),
                         const SizedBox(height: 4),
                         Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 2),
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                           decoration: BoxDecoration(
                             color: colorScheme.primaryContainer,
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Text(
-                            worker?.role == WorkerRole.admin ? 'Admin' : 'Worker',
+                            worker?.role == IdentityRole.admin ? 'Admin' : 'Worker',
                             style: TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.w600,
@@ -120,30 +110,26 @@ class _SettingsScaffold extends StatelessWidget {
           // Appearance section
           Text(
             'Appearance',
-            style: theme.textTheme.labelLarge
-                ?.copyWith(color: colorScheme.onSurfaceVariant),
+            style: theme.textTheme.labelLarge?.copyWith(color: colorScheme.onSurfaceVariant),
           ),
           const SizedBox(height: 8),
           Card(
             child: SwitchListTile(
-              secondary: Icon(
-                  isDark ? Icons.dark_mode_rounded : Icons.light_mode_rounded),
+              secondary: Icon(isDark ? Icons.dark_mode_rounded : Icons.light_mode_rounded),
               title: const Text('Dark Mode'),
-              subtitle:
-                  Text(isDark ? 'Dark theme active' : 'Light theme active'),
+              subtitle: Text(isDark ? 'Dark theme active' : 'Light theme active'),
               value: isDark,
-              onChanged: (v) => SettingsScope.setThemeMode(
-                  context, v ? ThemeMode.dark : ThemeMode.light),
+              onChanged: (v) =>
+                  SettingsScope.setThemeMode(context, v ? ThemeMode.dark : ThemeMode.light),
             ),
           ),
           const SizedBox(height: 16),
 
           // Admin section
-          if (worker?.isAdmin == true) ...[
+          if (worker?.identityRole == IdentityRole.admin) ...[
             Text(
               'Administration',
-              style: theme.textTheme.labelLarge
-                  ?.copyWith(color: colorScheme.onSurfaceVariant),
+              style: theme.textTheme.labelLarge?.copyWith(color: colorScheme.onSurfaceVariant),
             ),
             const SizedBox(height: 8),
             Card(
@@ -156,17 +142,14 @@ class _SettingsScaffold extends StatelessWidget {
                         color: colorScheme.primaryContainer,
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      child: Icon(Icons.smart_toy_outlined,
-                          color: colorScheme.primary, size: 20),
+                      child: Icon(Icons.smart_toy_outlined, color: colorScheme.primary, size: 20),
                     ),
                     title: const Text('Bot Settings'),
                     subtitle: const Text('Configure Telegram bot'),
-                    trailing: const Icon(Icons.arrow_forward_ios_rounded,
-                        size: 16),
-                    onTap: () => Octopus.of(context).setState(
-                      (state) =>
-                          state..add(Routes.botSettings.node()),
-                    ),
+                    trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 16),
+                    onTap: () => Octopus.of(
+                      context,
+                    ).setState((state) => state..add(Routes.botSettings.node())),
                   ),
                   const Divider(height: 1),
                   ListTile(
@@ -176,16 +159,17 @@ class _SettingsScaffold extends StatelessWidget {
                         color: colorScheme.secondaryContainer,
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      child: Icon(Icons.people_outline_rounded,
-                          color: colorScheme.secondary, size: 20),
+                      child: Icon(
+                        Icons.people_outline_rounded,
+                        color: colorScheme.secondary,
+                        size: 20,
+                      ),
                     ),
                     title: const Text('Workers'),
                     subtitle: const Text('Manage team members'),
-                    trailing: const Icon(Icons.arrow_forward_ios_rounded,
-                        size: 16),
-                    onTap: () => Octopus.of(context).setState(
-                      (state) => state..add(Routes.workers.node()),
-                    ),
+                    trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 16),
+                    onTap: () =>
+                        Octopus.of(context).setState((state) => state..add(Routes.workers.node())),
                   ),
                 ],
               ),
@@ -196,8 +180,7 @@ class _SettingsScaffold extends StatelessWidget {
           // About
           Text(
             'About',
-            style: theme.textTheme.labelLarge
-                ?.copyWith(color: colorScheme.onSurfaceVariant),
+            style: theme.textTheme.labelLarge?.copyWith(color: colorScheme.onSurfaceVariant),
           ),
           const SizedBox(height: 8),
           Card(
@@ -205,7 +188,7 @@ class _SettingsScaffold extends StatelessWidget {
               padding: const EdgeInsets.all(16),
               child: Column(
                 children: [
-                  _InfoRow(label: 'App Name', value: 'TeleDesk'),
+                  const _InfoRow(label: 'App Name', value: 'TeleDesk'),
                   const Divider(height: 24),
                   _InfoRow(label: 'Version', value: metadata.appVersion),
                   const Divider(height: 24),
@@ -249,8 +232,7 @@ class _InfoRow extends StatelessWidget {
         Text(label, style: theme.textTheme.bodyMedium),
         Text(
           value,
-          style: theme.textTheme.bodyMedium?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant),
+          style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
         ),
       ],
     );

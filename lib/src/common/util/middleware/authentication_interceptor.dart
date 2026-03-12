@@ -1,6 +1,6 @@
-import 'package:teledesk/src/common/util/api_client.dart';
 import 'package:l/l.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:teledesk/src/common/util/api_client.dart';
 
 class AuthenticationInterceptor {
   AuthenticationInterceptor({required final AuthenticationHeaders authenticationHeaders})

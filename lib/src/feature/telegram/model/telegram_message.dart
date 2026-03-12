@@ -20,6 +20,43 @@ class TelegramIncomingMessage {
     this.caption,
   });
 
+  factory TelegramIncomingMessage.fromJson(Map<String, dynamic> json) {
+    final fromJson = json['from'] as Map<String, dynamic>?;
+    final chatJson = json['chat'] as Map<String, dynamic>?;
+    final photoJson = json['photo'] as List<dynamic>?;
+
+    return TelegramIncomingMessage(
+      messageId: json['message_id'] as int,
+      from: TelegramUser.fromJson(fromJson ?? {}),
+      chat: TelegramChat.fromJson(chatJson ?? {}),
+      date: DateTime.fromMillisecondsSinceEpoch((json['date'] as int) * 1000),
+      text: json['text'] as String?,
+      caption: json['caption'] as String?,
+      photo: photoJson?.map((p) => TelegramPhotoSize.fromJson(p as Map<String, dynamic>)).toList(),
+      video: json['video'] != null
+          ? TelegramVideo.fromJson(json['video'] as Map<String, dynamic>)
+          : null,
+      document: json['document'] != null
+          ? TelegramDocument.fromJson(json['document'] as Map<String, dynamic>)
+          : null,
+      sticker: json['sticker'] != null
+          ? TelegramSticker.fromJson(json['sticker'] as Map<String, dynamic>)
+          : null,
+      voice: json['voice'] != null
+          ? TelegramVoice.fromJson(json['voice'] as Map<String, dynamic>)
+          : null,
+      videoNote: json['video_note'] != null
+          ? TelegramVideoNote.fromJson(json['video_note'] as Map<String, dynamic>)
+          : null,
+      audio: json['audio'] != null
+          ? TelegramAudio.fromJson(json['audio'] as Map<String, dynamic>)
+          : null,
+      animation: json['animation'] != null
+          ? TelegramAnimation.fromJson(json['animation'] as Map<String, dynamic>)
+          : null,
+    );
+  }
+
   final int messageId;
   final TelegramUser from;
   final TelegramChat chat;
@@ -60,43 +97,6 @@ class TelegramIncomingMessage {
   }
 
   String? get displayText => text ?? caption;
-
-  factory TelegramIncomingMessage.fromJson(Map<String, dynamic> json) {
-    final fromJson = json['from'] as Map<String, dynamic>?;
-    final chatJson = json['chat'] as Map<String, dynamic>?;
-    final photoJson = json['photo'] as List<dynamic>?;
-
-    return TelegramIncomingMessage(
-      messageId: json['message_id'] as int,
-      from: TelegramUser.fromJson(fromJson ?? {}),
-      chat: TelegramChat.fromJson(chatJson ?? {}),
-      date: DateTime.fromMillisecondsSinceEpoch((json['date'] as int) * 1000),
-      text: json['text'] as String?,
-      caption: json['caption'] as String?,
-      photo: photoJson?.map((p) => TelegramPhotoSize.fromJson(p as Map<String, dynamic>)).toList(),
-      video: json['video'] != null
-          ? TelegramVideo.fromJson(json['video'] as Map<String, dynamic>)
-          : null,
-      document: json['document'] != null
-          ? TelegramDocument.fromJson(json['document'] as Map<String, dynamic>)
-          : null,
-      sticker: json['sticker'] != null
-          ? TelegramSticker.fromJson(json['sticker'] as Map<String, dynamic>)
-          : null,
-      voice: json['voice'] != null
-          ? TelegramVoice.fromJson(json['voice'] as Map<String, dynamic>)
-          : null,
-      videoNote: json['video_note'] != null
-          ? TelegramVideoNote.fromJson(json['video_note'] as Map<String, dynamic>)
-          : null,
-      audio: json['audio'] != null
-          ? TelegramAudio.fromJson(json['audio'] as Map<String, dynamic>)
-          : null,
-      animation: json['animation'] != null
-          ? TelegramAnimation.fromJson(json['animation'] as Map<String, dynamic>)
-          : null,
-    );
-  }
 }
 
 @immutable
@@ -108,11 +108,6 @@ class TelegramChat {
     this.firstName,
     this.lastName,
   });
-  final int id;
-  final String type;
-  final String? username;
-  final String? firstName;
-  final String? lastName;
   factory TelegramChat.fromJson(Map<String, dynamic> json) => TelegramChat(
     id: json['id'] as int,
     type: json['type'] as String? ?? 'private',
@@ -120,6 +115,11 @@ class TelegramChat {
     firstName: json['first_name'] as String?,
     lastName: json['last_name'] as String?,
   );
+  final int id;
+  final String type;
+  final String? username;
+  final String? firstName;
+  final String? lastName;
 }
 
 @immutable
@@ -131,11 +131,6 @@ class TelegramPhotoSize {
     required this.height,
     this.fileSize,
   });
-  final String fileId;
-  final String fileUniqueId;
-  final int width;
-  final int height;
-  final int? fileSize;
   factory TelegramPhotoSize.fromJson(Map<String, dynamic> json) => TelegramPhotoSize(
     fileId: json['file_id'] as String,
     fileUniqueId: json['file_unique_id'] as String,
@@ -143,6 +138,11 @@ class TelegramPhotoSize {
     height: json['height'] as int,
     fileSize: json['file_size'] as int?,
   );
+  final String fileId;
+  final String fileUniqueId;
+  final int width;
+  final int height;
+  final int? fileSize;
 }
 
 @immutable
@@ -154,11 +154,6 @@ class TelegramVideo {
     this.mimeType,
     this.fileSize,
   });
-  final String fileId;
-  final String fileUniqueId;
-  final String? fileName;
-  final String? mimeType;
-  final int? fileSize;
   factory TelegramVideo.fromJson(Map<String, dynamic> json) => TelegramVideo(
     fileId: json['file_id'] as String,
     fileUniqueId: json['file_unique_id'] as String,
@@ -166,6 +161,11 @@ class TelegramVideo {
     mimeType: json['mime_type'] as String?,
     fileSize: json['file_size'] as int?,
   );
+  final String fileId;
+  final String fileUniqueId;
+  final String? fileName;
+  final String? mimeType;
+  final int? fileSize;
 }
 
 @immutable
@@ -177,11 +177,6 @@ class TelegramDocument {
     this.mimeType,
     this.fileSize,
   });
-  final String fileId;
-  final String fileUniqueId;
-  final String? fileName;
-  final String? mimeType;
-  final int? fileSize;
   factory TelegramDocument.fromJson(Map<String, dynamic> json) => TelegramDocument(
     fileId: json['file_id'] as String,
     fileUniqueId: json['file_unique_id'] as String,
@@ -189,19 +184,24 @@ class TelegramDocument {
     mimeType: json['mime_type'] as String?,
     fileSize: json['file_size'] as int?,
   );
+  final String fileId;
+  final String fileUniqueId;
+  final String? fileName;
+  final String? mimeType;
+  final int? fileSize;
 }
 
 @immutable
 class TelegramSticker {
   const TelegramSticker({required this.fileId, required this.fileUniqueId, this.fileSize});
-  final String fileId;
-  final String fileUniqueId;
-  final int? fileSize;
   factory TelegramSticker.fromJson(Map<String, dynamic> json) => TelegramSticker(
     fileId: json['file_id'] as String,
     fileUniqueId: json['file_unique_id'] as String,
     fileSize: json['file_size'] as int?,
   );
+  final String fileId;
+  final String fileUniqueId;
+  final int? fileSize;
 }
 
 @immutable
@@ -212,16 +212,16 @@ class TelegramVoice {
     this.fileSize,
     this.duration,
   });
-  final String fileId;
-  final String fileUniqueId;
-  final int? fileSize;
-  final int? duration;
   factory TelegramVoice.fromJson(Map<String, dynamic> json) => TelegramVoice(
     fileId: json['file_id'] as String,
     fileUniqueId: json['file_unique_id'] as String,
     fileSize: json['file_size'] as int?,
     duration: json['duration'] as int?,
   );
+  final String fileId;
+  final String fileUniqueId;
+  final int? fileSize;
+  final int? duration;
 }
 
 @immutable
@@ -232,16 +232,16 @@ class TelegramVideoNote {
     this.fileSize,
     this.duration,
   });
-  final String fileId;
-  final String fileUniqueId;
-  final int? fileSize;
-  final int? duration;
   factory TelegramVideoNote.fromJson(Map<String, dynamic> json) => TelegramVideoNote(
     fileId: json['file_id'] as String,
     fileUniqueId: json['file_unique_id'] as String,
     fileSize: json['file_size'] as int?,
     duration: json['duration'] as int?,
   );
+  final String fileId;
+  final String fileUniqueId;
+  final int? fileSize;
+  final int? duration;
 }
 
 @immutable
@@ -254,12 +254,6 @@ class TelegramAudio {
     this.fileSize,
     this.duration,
   });
-  final String fileId;
-  final String fileUniqueId;
-  final String? fileName;
-  final String? mimeType;
-  final int? fileSize;
-  final int? duration;
   factory TelegramAudio.fromJson(Map<String, dynamic> json) => TelegramAudio(
     fileId: json['file_id'] as String,
     fileUniqueId: json['file_unique_id'] as String,
@@ -268,6 +262,12 @@ class TelegramAudio {
     fileSize: json['file_size'] as int?,
     duration: json['duration'] as int?,
   );
+  final String fileId;
+  final String fileUniqueId;
+  final String? fileName;
+  final String? mimeType;
+  final int? fileSize;
+  final int? duration;
 }
 
 @immutable
@@ -279,11 +279,6 @@ class TelegramAnimation {
     this.mimeType,
     this.fileSize,
   });
-  final String fileId;
-  final String fileUniqueId;
-  final String? fileName;
-  final String? mimeType;
-  final int? fileSize;
   factory TelegramAnimation.fromJson(Map<String, dynamic> json) => TelegramAnimation(
     fileId: json['file_id'] as String,
     fileUniqueId: json['file_unique_id'] as String,
@@ -291,4 +286,9 @@ class TelegramAnimation {
     mimeType: json['mime_type'] as String?,
     fileSize: json['file_size'] as int?,
   );
+  final String fileId;
+  final String fileUniqueId;
+  final String? fileName;
+  final String? mimeType;
+  final int? fileSize;
 }

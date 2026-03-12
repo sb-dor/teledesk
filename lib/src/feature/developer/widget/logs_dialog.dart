@@ -1,10 +1,10 @@
 import 'package:drift/drift.dart' as drift;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:teledesk/src/common/util/date_util.dart';
-import 'package:teledesk/src/feature/initialization/models/dependencies.dart';
 import 'package:l/l.dart';
 import 'package:octopus/octopus.dart';
+import 'package:teledesk/src/common/util/date_util.dart';
+import 'package:teledesk/src/feature/initialization/models/dependencies.dart';
 
 /// {@template logs_dialog}
 /// LogsDialog widget.

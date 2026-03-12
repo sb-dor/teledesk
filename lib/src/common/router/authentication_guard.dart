@@ -1,8 +1,7 @@
 import 'dart:async';
 
-import 'package:flutter/widgets.dart';
-import 'package:teledesk/src/feature/authentication/controller/authentication_controller.dart';
 import 'package:octopus/octopus.dart';
+import 'package:teledesk/src/feature/authentication/controller/authentication_controller.dart';
 
 /// A router guard that checks authentication state and routes accordingly.
 /// - needsSetup  -> signup screen

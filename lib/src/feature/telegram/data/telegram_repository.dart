@@ -1,8 +1,9 @@
 import 'dart:convert';
 import 'dart:typed_data';
+
 import 'package:http/http.dart' as http;
-import 'package:teledesk/src/feature/telegram/model/telegram_update.dart';
 import 'package:teledesk/src/feature/bot_settings/model/bot_command.dart';
+import 'package:teledesk/src/feature/telegram/model/telegram_update.dart';
 
 abstract interface class ITelegramRepository {
   /// Get pending updates via long-polling. Returns empty list if timeout.

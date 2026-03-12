@@ -11,6 +11,5 @@ class ConversationScreen extends StatelessWidget {
   final int conversationId;
 
   @override
-  Widget build(BuildContext context) =>
-      ConversationConfigWidget(conversationId: conversationId);
+  Widget build(BuildContext context) => ConversationConfigWidget(conversationId: conversationId);
 }

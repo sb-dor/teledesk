@@ -3,7 +3,7 @@ import 'package:octopus/octopus.dart';
 import 'package:teledesk/src/common/router/routes.dart';
 import 'package:teledesk/src/common/util/screen_util.dart';
 import 'package:teledesk/src/common/widget/main_navigation.dart';
-import 'package:teledesk/src/feature/authentication/model/worker.dart';
+import 'package:teledesk/src/feature/authentication/model/identity.dart';
 import 'package:teledesk/src/feature/authentication/widget/authentication_scope.dart';
 import 'package:teledesk/src/feature/chats/data/conversation_repository.dart';
 import 'package:teledesk/src/feature/initialization/models/dependencies.dart';
@@ -58,13 +58,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final worker = AuthenticationScope.workerOf(context);
+    final worker = AuthenticationScope.identityOf(context);
     final isPolling = _pollingController.isPolling;
 
     return MainNavigation(
       currentRoute: Routes.dashboard,
       child: _DashboardScaffold(
-        worker: worker,
+        worker: worker as Worker,
         isPolling: isPolling,
         stats: _stats,
         loadingStats: _loadingStats,
@@ -178,8 +178,7 @@ class _DashboardScaffold extends StatelessWidget {
 
               Text(
                 'Overview',
-                style: theme.textTheme.titleMedium
-                    ?.copyWith(fontWeight: FontWeight.bold),
+                style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 12),
 
@@ -193,8 +192,7 @@ class _DashboardScaffold extends StatelessWidget {
 
               Text(
                 'Quick Actions',
-                style: theme.textTheme.titleMedium
-                    ?.copyWith(fontWeight: FontWeight.bold),
+                style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 12),
 
@@ -240,8 +238,7 @@ class _DashboardScaffold extends StatelessWidget {
 
     return LayoutBuilder(
       builder: (ctx, constraints) {
-        final itemWidth =
-            (constraints.maxWidth - (columns - 1) * 12) / columns;
+        final itemWidth = (constraints.maxWidth - (columns - 1) * 12) / columns;
         return Wrap(
           spacing: 12,
           runSpacing: 12,
@@ -266,9 +263,8 @@ class _DashboardScaffold extends StatelessWidget {
           label: 'View Open Chats',
           subtitle: 'See all unassigned conversations',
           color: Colors.blue,
-          onTap: () => Octopus.of(context).setState(
-            (state) => OctopusState.single(Routes.chats.node()),
-          ),
+          onTap: () =>
+              Octopus.of(context).setState((state) => OctopusState.single(Routes.chats.node())),
         ),
         const SizedBox(height: 8),
         _QuickActionTile(
@@ -276,9 +272,8 @@ class _DashboardScaffold extends StatelessWidget {
           label: 'My Conversations',
           subtitle: 'Chats assigned to you',
           color: Colors.orange,
-          onTap: () => Octopus.of(context).setState(
-            (state) => OctopusState.single(Routes.chats.node()),
-          ),
+          onTap: () =>
+              Octopus.of(context).setState((state) => OctopusState.single(Routes.chats.node())),
         ),
       ],
     );
@@ -322,25 +317,24 @@ class _StatCard extends StatelessWidget {
               child: Icon(item.icon, color: item.color, size: 20),
             ),
             const SizedBox(height: 12),
-            item.loading
-                ? Container(
-                    height: 32,
-                    width: 60,
-                    decoration: BoxDecoration(
-                      color: theme.colorScheme.surfaceContainerHighest,
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                  )
-                : Text(
-                    item.value.toString(),
-                    style: theme.textTheme.headlineMedium
-                        ?.copyWith(fontWeight: FontWeight.bold),
-                  ),
+            if (item.loading)
+              Container(
+                height: 32,
+                width: 60,
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.surfaceContainerHighest,
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              )
+            else
+              Text(
+                item.value.toString(),
+                style: theme.textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold),
+              ),
             const SizedBox(height: 4),
             Text(
               item.label,
-              style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant),
+              style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
             ),
           ],
         ),
@@ -376,14 +370,10 @@ class _QuickActionTile extends StatelessWidget {
           ),
           child: Icon(icon, color: color, size: 22),
         ),
-        title: Text(label,
-            style: const TextStyle(fontWeight: FontWeight.w600)),
-        subtitle: Text(subtitle,
-            style:
-                TextStyle(color: theme.colorScheme.onSurfaceVariant)),
+        title: Text(label, style: const TextStyle(fontWeight: FontWeight.w600)),
+        subtitle: Text(subtitle, style: TextStyle(color: theme.colorScheme.onSurfaceVariant)),
         trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 16),
-        shape:
-            RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         onTap: onTap,
       ),
     );

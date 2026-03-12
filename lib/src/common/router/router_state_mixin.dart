@@ -1,8 +1,8 @@
 import 'package:flutter/widgets.dart' show State, StatefulWidget, ValueNotifier;
+import 'package:octopus/octopus.dart';
 import 'package:teledesk/src/common/router/authentication_guard.dart';
 import 'package:teledesk/src/common/router/routes.dart';
 import 'package:teledesk/src/feature/initialization/models/dependencies.dart';
-import 'package:octopus/octopus.dart';
 
 mixin RouterStateMixin<T extends StatefulWidget> on State<T> {
   late final Octopus router;

@@ -1,7 +1,7 @@
 import 'dart:async';
 
-import 'package:teledesk/src/common/router/routes.dart';
 import 'package:octopus/octopus.dart';
+import 'package:teledesk/src/common/router/routes.dart';
 
 /// Check routes always contain the dashboard route at the first position.
 /// Only exception for not authenticated users.

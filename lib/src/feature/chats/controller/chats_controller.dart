@@ -16,14 +16,11 @@ sealed class ChatsState with _$ChatsState {
   const factory ChatsState.error(String message) = Chats$ErrorState;
 }
 
-final class ChatsController extends StateController<ChatsState>
-    with SequentialControllerHandler {
-  ChatsController({
-    required IConversationRepository repository,
-    required int workerId,
-  })  : _repository = repository,
-        _workerId = workerId,
-        super(initialState: const ChatsState.loading());
+final class ChatsController extends StateController<ChatsState> with SequentialControllerHandler {
+  ChatsController({required IConversationRepository repository, required int workerId})
+    : _repository = repository,
+      _workerId = workerId,
+      super(initialState: const ChatsState.loading());
 
   final IConversationRepository _repository;
   final int _workerId;

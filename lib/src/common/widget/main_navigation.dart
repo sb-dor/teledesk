@@ -12,11 +12,7 @@ import 'package:teledesk/src/feature/initialization/models/dependencies.dart';
 /// On desktop/tablet the rail is shown to the left of the child.
 /// On mobile a bottom navigation bar is shown below the child.
 class MainNavigation extends StatefulWidget {
-  const MainNavigation({
-    super.key,
-    required this.child,
-    required this.currentRoute,
-  });
+  const MainNavigation({super.key, required this.child, required this.currentRoute});
 
   final Widget child;
   final Routes currentRoute;
@@ -56,7 +52,7 @@ class _MainNavigationState extends State<MainNavigation> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       final deps = Dependencies.of(context);
-      final worker = AuthenticationScope.workerOf(context, listen: false);
+      final worker = AuthenticationScope.identityOf(context, listen: false);
       _chatsController = ChatsController(
         repository: deps.conversationRepository,
         workerId: worker?.id ?? 0,
@@ -88,9 +84,7 @@ class _MainNavigationState extends State<MainNavigation> {
   }
 
   void _navigateTo(Routes route) {
-    Octopus.of(context).setState(
-      (state) => OctopusState.single(route.node()),
-    );
+    Octopus.of(context).setState((state) => OctopusState.single(route.node()));
   }
 
   @override
@@ -113,8 +107,7 @@ class _MainNavigationState extends State<MainNavigation> {
               children: [
                 NavigationRail(
                   selectedIndex: _selectedIndex,
-                  onDestinationSelected: (i) =>
-                      _navigateTo(_destinations[i].route),
+                  onDestinationSelected: (i) => _navigateTo(_destinations[i].route),
                   labelType: NavigationRailLabelType.all,
                   backgroundColor: colorScheme.surface,
                   leading: const Padding(
@@ -122,8 +115,7 @@ class _MainNavigationState extends State<MainNavigation> {
                     child: _TeleDeskLogo(),
                   ),
                   destinations: _destinations.map((d) {
-                    final showBadge =
-                        d.route == Routes.chats && _openCount > 0;
+                    final showBadge = d.route == Routes.chats && _openCount > 0;
                     return NavigationRailDestination(
                       icon: Badge(
                         isLabelVisible: showBadge,
@@ -210,11 +202,7 @@ class _TeleDeskLogo extends StatelessWidget {
             color: theme.colorScheme.primary,
             borderRadius: BorderRadius.circular(10),
           ),
-          child: const Icon(
-            Icons.support_agent_rounded,
-            color: Colors.white,
-            size: 22,
-          ),
+          child: const Icon(Icons.support_agent_rounded, color: Colors.white, size: 22),
         ),
         const SizedBox(height: 4),
         Text(

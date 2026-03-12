@@ -25,8 +25,7 @@ class _BotSettingsScreenState extends State<BotSettingsScreen> {
   void initState() {
     super.initState();
     final deps = Dependencies.of(context);
-    _controller = BotSettingsController(repository: deps.botSettingsRepository)
-      ..load();
+    _controller = BotSettingsController(repository: deps.botSettingsRepository)..load();
     _controller.addListener(_onStateChanged);
   }
 
@@ -43,10 +42,7 @@ class _BotSettingsScreenState extends State<BotSettingsScreen> {
     } else if (state is BotSettings$SavedState) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Saved successfully'),
-            behavior: SnackBarBehavior.floating,
-          ),
+          const SnackBar(content: Text('Saved successfully'), behavior: SnackBarBehavior.floating),
         );
         setState(() {});
       }
@@ -73,7 +69,7 @@ class _BotSettingsScreenState extends State<BotSettingsScreen> {
     final isLoading = state is BotSettings$LoadingState;
     final isSaving = state is BotSettings$SavingState;
 
-    List<BotCommand> commands = [];
+    var commands = <BotCommand>[];
     String? botUsername;
     if (state is BotSettings$IdleState) {
       commands = state.commands;
@@ -104,10 +100,7 @@ class _BotSettingsScreenState extends State<BotSettingsScreen> {
                               color: colorScheme.primaryContainer,
                               shape: BoxShape.circle,
                             ),
-                            child: Icon(
-                              Icons.smart_toy_rounded,
-                              color: colorScheme.primary,
-                            ),
+                            child: Icon(Icons.smart_toy_rounded, color: colorScheme.primary),
                           ),
                           const SizedBox(width: 16),
                           Column(
@@ -130,8 +123,7 @@ class _BotSettingsScreenState extends State<BotSettingsScreen> {
                           ),
                           const Spacer(),
                           Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 10, vertical: 4),
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                             decoration: BoxDecoration(
                               color: Colors.green.withOpacity(0.15),
                               borderRadius: BorderRadius.circular(12),
@@ -167,7 +159,7 @@ class _BotSettingsScreenState extends State<BotSettingsScreen> {
                 ],
 
                 // Commands section
-                _SectionHeader(
+                const _SectionHeader(
                   title: 'Bot Commands',
                   subtitle: 'Commands visible to users in Telegram',
                 ),
@@ -176,24 +168,23 @@ class _BotSettingsScreenState extends State<BotSettingsScreen> {
                   child: Column(
                     children: [
                       ...commands.asMap().entries.map(
-                            (entry) => _CommandTile(
-                              command: entry.value,
-                              onEdit: () => _showCommandDialog(
-                                context,
-                                command: entry.value,
-                                onSave: (updated) {
-                                  final newList = [...commands];
-                                  newList[entry.key] = updated;
-                                  _controller.saveCommands(newList);
-                                },
-                              ),
-                              onDelete: () {
-                                final newList = [...commands]
-                                  ..removeAt(entry.key);
-                                _controller.saveCommands(newList);
-                              },
-                            ),
+                        (entry) => _CommandTile(
+                          command: entry.value,
+                          onEdit: () => _showCommandDialog(
+                            context,
+                            command: entry.value,
+                            onSave: (updated) {
+                              final newList = [...commands];
+                              newList[entry.key] = updated;
+                              _controller.saveCommands(newList);
+                            },
                           ),
+                          onDelete: () {
+                            final newList = [...commands]..removeAt(entry.key);
+                            _controller.saveCommands(newList);
+                          },
+                        ),
+                      ),
                       ListTile(
                         leading: Container(
                           width: 36,
@@ -202,11 +193,7 @@ class _BotSettingsScreenState extends State<BotSettingsScreen> {
                             color: colorScheme.primaryContainer,
                             shape: BoxShape.circle,
                           ),
-                          child: Icon(
-                            Icons.add_rounded,
-                            color: colorScheme.primary,
-                            size: 20,
-                          ),
+                          child: Icon(Icons.add_rounded, color: colorScheme.primary, size: 20),
                         ),
                         title: const Text('Add Command'),
                         onTap: () => _showCommandDialog(
@@ -222,7 +209,7 @@ class _BotSettingsScreenState extends State<BotSettingsScreen> {
                 const SizedBox(height: 16),
 
                 // Welcome message
-                _SectionHeader(
+                const _SectionHeader(
                   title: 'Welcome Message',
                   subtitle: 'Sent when a user starts a conversation',
                 ),
@@ -237,8 +224,7 @@ class _BotSettingsScreenState extends State<BotSettingsScreen> {
                           controller: _welcomeCtrl,
                           maxLines: 4,
                           decoration: const InputDecoration(
-                            hintText:
-                                'Enter welcome message shown to users...',
+                            hintText: 'Enter welcome message shown to users...',
                             label: Text('Welcome Message'),
                           ),
                           onChanged: (_) => _welcomeEdited = true,
@@ -249,8 +235,7 @@ class _BotSettingsScreenState extends State<BotSettingsScreen> {
                           child: FilledButton(
                             onPressed: isSaving
                                 ? null
-                                : () => _controller
-                                    .saveWelcomeMessage(_welcomeCtrl.text),
+                                : () => _controller.saveWelcomeMessage(_welcomeCtrl.text),
                             child: isSaving
                                 ? const SizedBox(
                                     width: 18,
@@ -270,7 +255,7 @@ class _BotSettingsScreenState extends State<BotSettingsScreen> {
                 const SizedBox(height: 16),
 
                 // Auto-reply message
-                _SectionHeader(
+                const _SectionHeader(
                   title: 'Auto-Reply Message',
                   subtitle: 'Sent automatically when all workers are busy',
                 ),
@@ -285,8 +270,7 @@ class _BotSettingsScreenState extends State<BotSettingsScreen> {
                           controller: _autoReplyCtrl,
                           maxLines: 4,
                           decoration: const InputDecoration(
-                            hintText:
-                                'Enter auto-reply message for busy times...',
+                            hintText: 'Enter auto-reply message for busy times...',
                             label: Text('Auto-Reply Message'),
                           ),
                           onChanged: (_) => _autoReplyEdited = true,
@@ -297,8 +281,7 @@ class _BotSettingsScreenState extends State<BotSettingsScreen> {
                           child: FilledButton(
                             onPressed: isSaving
                                 ? null
-                                : () => _controller
-                                    .saveAutoReply(_autoReplyCtrl.text),
+                                : () => _controller.saveAutoReply(_autoReplyCtrl.text),
                             child: isSaving
                                 ? const SizedBox(
                                     width: 18,
@@ -371,18 +354,17 @@ class _BotSettingsScreenState extends State<BotSettingsScreen> {
           ],
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Cancel'),
-          ),
+          TextButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text('Cancel')),
           FilledButton(
             onPressed: () {
               if (cmdCtrl.text.trim().isEmpty) return;
               Navigator.of(ctx).pop();
-              onSave(BotCommand(
-                command: cmdCtrl.text.trim().toLowerCase(),
-                description: descCtrl.text.trim(),
-              ));
+              onSave(
+                BotCommand(
+                  command: cmdCtrl.text.trim().toLowerCase(),
+                  description: descCtrl.text.trim(),
+                ),
+              );
             },
             child: const Text('Save'),
           ),
@@ -404,17 +386,10 @@ class _SectionHeader extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          title,
-          style: theme.textTheme.titleSmall?.copyWith(
-            fontWeight: FontWeight.bold,
-          ),
-        ),
+        Text(title, style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold)),
         Text(
           subtitle,
-          style: theme.textTheme.bodySmall?.copyWith(
-            color: theme.colorScheme.onSurfaceVariant,
-          ),
+          style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
         ),
       ],
     );
@@ -422,11 +397,7 @@ class _SectionHeader extends StatelessWidget {
 }
 
 class _CommandTile extends StatelessWidget {
-  const _CommandTile({
-    required this.command,
-    required this.onEdit,
-    required this.onDelete,
-  });
+  const _CommandTile({required this.command, required this.onEdit, required this.onDelete});
 
   final BotCommand command;
   final VoidCallback onEdit;
@@ -464,11 +435,7 @@ class _CommandTile extends StatelessWidget {
             tooltip: 'Edit',
           ),
           IconButton(
-            icon: Icon(
-              Icons.delete_outline_rounded,
-              size: 18,
-              color: theme.colorScheme.error,
-            ),
+            icon: Icon(Icons.delete_outline_rounded, size: 18, color: theme.colorScheme.error),
             onPressed: onDelete,
             tooltip: 'Delete',
           ),

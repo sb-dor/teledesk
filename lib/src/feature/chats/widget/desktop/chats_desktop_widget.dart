@@ -26,10 +26,7 @@ class _ChatsDesktopWidgetState extends State<ChatsDesktopWidget> {
   void _navigateToConversation(BuildContext context, int conversationId) {
     Octopus.of(context).setState(
       (state) =>
-          state
-            ..add(
-              Routes.conversation.node()..arguments['id'] = conversationId.toString(),
-            ),
+          state..add(Routes.conversation.node()..arguments['id'] = conversationId.toString()),
     );
   }
 
@@ -57,12 +54,8 @@ class _ChatsDesktopWidgetState extends State<ChatsDesktopWidget> {
           conversations = [];
         }
 
-        final openCount = chatsState is Chats$IdleState
-            ? chatsState.openConversations.length
-            : 0;
-        final mineCount = chatsState is Chats$IdleState
-            ? chatsState.myConversations.length
-            : 0;
+        final openCount = chatsState is Chats$IdleState ? chatsState.openConversations.length : 0;
+        final mineCount = chatsState is Chats$IdleState ? chatsState.myConversations.length : 0;
 
         return Scaffold(
           appBar: AppBar(
@@ -94,8 +87,7 @@ class _ChatsDesktopWidgetState extends State<ChatsDesktopWidget> {
                       onChanged: (q) async {
                         dataController.setSearchQuery(q);
                         if (q.isNotEmpty) {
-                          final results =
-                              await scope.conversationRepository.searchConversations(q);
+                          final results = await scope.conversationRepository.searchConversations(q);
                           dataController.setSearchResults(results);
                         }
                       },
@@ -132,9 +124,7 @@ class _ChatsDesktopWidgetState extends State<ChatsDesktopWidget> {
                 ),
               ),
               const Divider(height: 1),
-              Expanded(
-                child: _buildBody(context, chatsState, conversations),
-              ),
+              Expanded(child: _buildBody(context, chatsState, conversations)),
             ],
           ),
         );
@@ -142,11 +132,7 @@ class _ChatsDesktopWidgetState extends State<ChatsDesktopWidget> {
     );
   }
 
-  Widget _buildBody(
-    BuildContext context,
-    ChatsState chatsState,
-    List<Conversation> conversations,
-  ) {
+  Widget _buildBody(BuildContext context, ChatsState chatsState, List<Conversation> conversations) {
     if (chatsState is Chats$LoadingState) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -176,8 +162,8 @@ class _ChatsDesktopWidgetState extends State<ChatsDesktopWidget> {
             Text(
               'No conversations',
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
             ),
           ],
         ),
@@ -268,11 +254,11 @@ class _ConversationTile extends StatelessWidget {
   final VoidCallback onTap;
 
   Color _statusColor(ConversationStatus status) => switch (status) {
-        ConversationStatus.open => Colors.blue,
-        ConversationStatus.inProgress => Colors.orange,
-        ConversationStatus.finishRequested => Colors.purple,
-        ConversationStatus.finished => Colors.grey,
-      };
+    ConversationStatus.open => Colors.blue,
+    ConversationStatus.inProgress => Colors.orange,
+    ConversationStatus.finishRequested => Colors.purple,
+    ConversationStatus.finished => Colors.grey,
+  };
 
   Color _avatarColor(String? colorCode) {
     if (colorCode == null || colorCode.isEmpty) return Colors.indigo;
@@ -325,11 +311,7 @@ class _ConversationTile extends StatelessWidget {
                   backgroundColor: avatarColor.withOpacity(0.2),
                   child: Text(
                     initials,
-                    style: TextStyle(
-                      color: avatarColor,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 14,
-                    ),
+                    style: TextStyle(color: avatarColor, fontWeight: FontWeight.bold, fontSize: 14),
                   ),
                 ),
                 Positioned(
@@ -341,10 +323,7 @@ class _ConversationTile extends StatelessWidget {
                     decoration: BoxDecoration(
                       color: statusColor,
                       shape: BoxShape.circle,
-                      border: Border.all(
-                        color: colorScheme.surface,
-                        width: 2,
-                      ),
+                      border: Border.all(color: colorScheme.surface, width: 2),
                     ),
                   ),
                 ),
@@ -361,9 +340,7 @@ class _ConversationTile extends StatelessWidget {
                         child: Text(
                           conversation.displayName,
                           style: theme.textTheme.titleSmall?.copyWith(
-                            fontWeight: conversation.hasUnread
-                                ? FontWeight.bold
-                                : FontWeight.w500,
+                            fontWeight: conversation.hasUnread ? FontWeight.bold : FontWeight.w500,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,

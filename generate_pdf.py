@@ -712,14 +712,14 @@ BotSettingsState.saved()              // Transient — emitted after save, then 
   final int id;
   final String username;       // login name
   final String displayName;    // shown in UI
-  final WorkerRole role;       // WorkerRole.admin | WorkerRole.worker
+  final IdentityRole role;       // IdentityRole.admin | IdentityRole.worker
   final String colorCode;      // hex: '#6366F1'
-  final WorkerStatus status;   // online | away | busy | offline
+  final IdentityStatus status;   // online | away | busy | offline
   final bool isActive;
   final DateTime createdAt;
 
   String get initials { ... }  // 'JD' from 'John Doe'
-  bool get isAdmin => role == WorkerRole.admin;
+  bool get isAdmin => role == IdentityRole.admin;
 }"""))
     story.append(sp(6))
 

@@ -18,9 +18,7 @@ class ConversationDataController with ChangeNotifier {
       final query = text.substring(1).toLowerCase();
       _filteredReplies = allReplies
           .where(
-            (r) =>
-                r.title.toLowerCase().contains(query) ||
-                r.content.toLowerCase().contains(query),
+            (r) => r.title.toLowerCase().contains(query) || r.content.toLowerCase().contains(query),
           )
           .toList();
       _showQuickReplies = _filteredReplies.isNotEmpty;
