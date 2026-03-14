@@ -50,7 +50,7 @@ class DashboardScreenState extends State<DashboardScreen> {
     pollingController = dependencies.telegramPollingController;
     dashboardController = DashboardController(
       dashboardRepository: DashboardRepositoryImpl(database: dependencies.database),
-    );
+    )..initialize();
     identity = AuthenticationScope.identityOf(context, listen: false);
     pollingController.addListener(_onPollingChanged);
   }
@@ -62,6 +62,7 @@ class DashboardScreenState extends State<DashboardScreen> {
   @override
   void dispose() {
     pollingController.removeListener(_onPollingChanged);
+    dashboardController.dispose();
     super.dispose();
   }
 

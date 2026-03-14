@@ -65,7 +65,10 @@ class _MainNavigationState extends State<MainNavigation> {
   void _onChatsChanged() {
     final state = _chatsController!.state;
     if (state is Chats$IdleState) {
-      final count = state.openConversations.length;
+      final count = [
+        ...state.openConversations,
+        ...state.myConversations,
+      ].where((c) => c.hasUnread).length;
       if (count != _openCount && mounted) {
         setState(() => _openCount = count);
       }

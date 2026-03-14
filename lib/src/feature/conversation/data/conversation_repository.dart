@@ -229,21 +229,16 @@ final class ConversationRepositoryImpl implements IConversationRepository {
   @override
   Future<void> updateLastMessage(int conversationId, String preview, DateTime time) async {
     final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
-    await (_db.update(_db.conversationsTbl)..where((t) => t.id.equals(conversationId))).write(
-      ConversationsTblCompanion(
-        lastMessagePreview: Value(preview),
-        lastMessageAt: Value(time.millisecondsSinceEpoch ~/ 1000),
-        updatedAt: Value(now),
-      ),
+    await _db.customUpdate(
+      'UPDATE conversations SET last_message_preview = ?, last_message_at = ?, updated_at = ?, unread_count = unread_count + 1 WHERE id = ?',
+      variables: [
+        Variable<String>(preview),
+        Variable<int>(time.millisecondsSinceEpoch ~/ 1000),
+        Variable<int>(now),
+        Variable<int>(conversationId),
+      ],
+      updates: {_db.conversationsTbl},
     );
-    final row = await (_db.select(
-      _db.conversationsTbl,
-    )..where((t) => t.id.equals(conversationId))).getSingleOrNull();
-    if (row != null) {
-      await (_db.update(_db.conversationsTbl)..where((t) => t.id.equals(conversationId))).write(
-        ConversationsTblCompanion(unreadCount: Value(row.unreadCount + 1)),
-      );
-    }
   }
 
   @override

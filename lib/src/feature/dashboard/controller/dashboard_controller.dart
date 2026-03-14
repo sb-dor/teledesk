@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:control/control.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:teledesk/src/feature/dashboard/data/dashboard_repository.dart';
@@ -31,10 +33,25 @@ class DashboardController extends StateController<DashboardState> with Sequentia
   }) : _iDashboardRepository = dashboardRepository;
 
   final IDashboardRepository _iDashboardRepository;
+  StreamSubscription<Map<String, int>>? _statsSub;
+
+  void initialize() {
+    setState(const DashboardState.inProgress());
+    _statsSub = _iDashboardRepository.watchDashboardStats().listen(
+      (stats) => setState(DashboardState.completed(stats)),
+      onError: (_) => setState(const DashboardState.error()),
+    );
+  }
 
   void load() => handle(() async {
     setState(const DashboardState.inProgress());
     final stats = await _iDashboardRepository.getDashboardStats();
     setState(DashboardState.completed(stats));
   }, error: (error, stackTrace) async => setState(const DashboardState.error()));
+
+  @override
+  void dispose() {
+    _statsSub?.cancel();
+    super.dispose();
+  }
 }
