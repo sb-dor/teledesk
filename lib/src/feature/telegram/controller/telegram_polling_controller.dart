@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
-import 'package:teledesk/src/feature/chats/data/conversation_repository.dart';
-import 'package:teledesk/src/feature/message/data/message_repository.dart';
+import 'package:teledesk/src/feature/conversation/data/conversation_repository.dart';
+
 import 'package:teledesk/src/feature/telegram/data/telegram_repository.dart';
 import 'package:teledesk/src/feature/telegram/model/telegram_update.dart';
 
@@ -11,16 +11,13 @@ final class TelegramPollingController with ChangeNotifier {
   TelegramPollingController({
     required ITelegramRepository telegramRepository,
     required IConversationRepository conversationRepository,
-    required IMessageRepository messageRepository,
     required int pollingTimeoutSeconds,
   }) : _telegram = telegramRepository,
        _conversations = conversationRepository,
-       _messages = messageRepository,
        _pollingTimeout = pollingTimeoutSeconds;
 
   final ITelegramRepository _telegram;
   final IConversationRepository _conversations;
-  final IMessageRepository _messages;
   final int _pollingTimeout;
 
   int _lastUpdateId = 0;
@@ -69,7 +66,7 @@ final class TelegramPollingController with ChangeNotifier {
     if (from.isBot) return;
 
     // Create or find conversation (re-opens if finished)
-    final conversation = await _conversations.createOrGetConversation(
+    final conversation = await _telegram.createOrGetConversation(
       telegramUserId: from.id,
       username: from.username,
       firstName: from.firstName,
@@ -82,7 +79,7 @@ final class TelegramPollingController with ChangeNotifier {
 
     // Handle /cancel command (only if canUserFinish is true)
     if (text == '/cancel') {
-      final current = await _conversations.findByTelegramUserId(from.id);
+      final current = await _telegram.findByTelegramUserId(from.id);
       if (current != null && current.canUserFinish) {
         await _conversations.finishConversation(current.id);
         await _telegram.sendMessage(
@@ -94,7 +91,7 @@ final class TelegramPollingController with ChangeNotifier {
     }
 
     // Save the incoming message to DB
-    await _messages.saveIncomingMessage(
+    await _telegram.saveIncomingMessage(
       conversationId: conversation.id,
       telegramMessageId: message.messageId,
       messageType: messageType,
@@ -108,7 +105,7 @@ final class TelegramPollingController with ChangeNotifier {
     );
 
     // Update conversation last message
-    await _messages.updateLastMessage(conversation.id, text ?? '[$messageType]', message.date);
+    await _conversations.updateLastMessage(conversation.id, text ?? '[$messageType]', message.date);
   }
 
   @override

@@ -24,22 +24,22 @@ class _ConversationDesktopWidgetState extends State<ConversationDesktopWidget> {
   final ScrollController _scrollController = ScrollController();
   final TextEditingController _textController = TextEditingController();
   final FocusNode _focusNode = FocusNode();
-  List<Worker> _allWorkers = [];
+  final List<Worker> _allWorkers = [];
   Timer? _typingTimer;
 
   @override
   void initState() {
     super.initState();
-    _loadWorkers();
+    // _loadWorkers();
   }
 
-  Future<void> _loadWorkers() async {
-    final deps = Dependencies.of(context);
-    try {
-      final workers = await deps.workerRepository.getWorkers();
-      if (mounted) setState(() => _allWorkers = workers);
-    } catch (_) {}
-  }
+  // Future<void> _loadWorkers() async {
+  //   final deps = Dependencies.of(context);
+  //   try {
+  //     final workers = await deps.workerRepository.getWorkers();
+  //     if (mounted) setState(() => _allWorkers = workers);
+  //   } catch (_) {}
+  // }
 
   @override
   void dispose() {
@@ -264,25 +264,25 @@ class _ConversationDesktopWidgetState extends State<ConversationDesktopWidget> {
                 ),
 
               // Message list
-              Expanded(
-                child: state is Conversation$LoadingState
-                    ? const Center(child: CircularProgressIndicator())
-                    : StreamBuilder<List<ChatMessage>>(
-                        stream: deps.messageRepository.watchMessages(scope.widget.conversationId),
-                        builder: (ctx, snapshot) {
-                          final messages = snapshot.data ?? [];
-                          if (messages.isNotEmpty) {
-                            _scrollToBottom();
-                          }
-                          return _MessageList(
-                            messages: messages,
-                            scrollController: _scrollController,
-                            currentWorkerId: currentWorker?.id ?? 0,
-                            allWorkers: _allWorkers,
-                          );
-                        },
-                      ),
-              ),
+              // Expanded(
+              //   child: state is Conversation$LoadingState
+              //       ? const Center(child: CircularProgressIndicator())
+              //       : StreamBuilder<List<ChatMessage>>(
+              //           stream: deps.messageRepository.watchMessages(scope.widget.conversationId),
+              //           builder: (ctx, snapshot) {
+              //             final messages = snapshot.data ?? [];
+              //             if (messages.isNotEmpty) {
+              //               _scrollToBottom();
+              //             }
+              //             return _MessageList(
+              //               messages: messages,
+              //               scrollController: _scrollController,
+              //               currentWorkerId: currentWorker?.id ?? 0,
+              //               allWorkers: _allWorkers,
+              //             );
+              //           },
+              //         ),
+              // ),
 
               // Quick replies popup
               if (dataCtrl.showQuickReplies)
@@ -515,7 +515,7 @@ class _MessageBubble extends StatelessWidget {
     final bubbleColor = isFromBot ? colorScheme.primary : colorScheme.surfaceContainerHighest;
     final textColor = isFromBot ? colorScheme.onPrimary : colorScheme.onSurface;
     final timeColor = isFromBot
-        ? colorScheme.onPrimary.withOpacity(0.7)
+        ? colorScheme.onPrimary.withValues(alpha: 0.7)
         : colorScheme.onSurfaceVariant;
 
     return Padding(
@@ -563,7 +563,7 @@ class _MessageBubble extends StatelessWidget {
                               style: TextStyle(
                                 fontSize: 11,
                                 fontWeight: FontWeight.bold,
-                                color: colorScheme.onPrimary.withOpacity(0.8),
+                                color: colorScheme.onPrimary.withValues(alpha: 0.8),
                               ),
                             ),
                           ),
@@ -689,7 +689,7 @@ class _MediaTile extends StatelessWidget {
         Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 18, color: textColor.withOpacity(0.8)),
+            Icon(icon, size: 18, color: textColor.withValues(alpha: 0.8)),
             const SizedBox(width: 6),
             Flexible(
               child: Text(
@@ -773,7 +773,7 @@ class _PhotoBubbleState extends State<_PhotoBubble> {
                 height: 24,
                 child: CircularProgressIndicator(strokeWidth: 2),
               )
-            : Icon(Icons.photo_rounded, size: 40, color: widget.textColor.withOpacity(0.5)),
+            : Icon(Icons.photo_rounded, size: 40, color: widget.textColor.withValues(alpha: 0.5)),
       ),
     );
   }
@@ -799,7 +799,7 @@ class _QuickRepliesPanel extends StatelessWidget {
         border: Border(top: BorderSide(color: theme.colorScheme.outlineVariant)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.08),
+            color: Colors.black.withValues(alpha: 0.08),
             blurRadius: 8,
             offset: const Offset(0, -2),
           ),

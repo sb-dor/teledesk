@@ -7,6 +7,8 @@ import 'package:teledesk/src/feature/initialization/models/dependencies.dart';
 import 'package:teledesk/src/feature/initialization/widget/app.dart';
 import 'package:teledesk/src/feature/initialization/widget/dependencies_scope.dart';
 import 'package:teledesk/src/feature/settings/widget/settings_scope.dart';
+import 'package:teledesk/src/feature/worker_creation/data/worker_creation_repository.dart';
+import 'package:teledesk/src/feature/worker_status_manager/data/worker_status_manager_repository.dart';
 import 'package:teledesk/src/feature/workers/data/worker_repository.dart';
 
 void main() => group('Widget', () {
@@ -26,6 +28,8 @@ void main() => group('Widget', () {
       ..authenticationController = AuthenticationController(
         workerRepository: FakeWorderRepoImpl(),
         authenticationRepository: AuthenticationRepositoryFake(),
+        workerCreationRepository: FakeWorkerCreationRepositoryImpl(),
+        workerStatusManagerRepository: FakeWorkerStatusManagerRepository(),
       );
     await tester.pumpWidget(
       dependencies.inject(

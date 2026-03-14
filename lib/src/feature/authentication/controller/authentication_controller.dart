@@ -3,6 +3,8 @@ import 'package:flutter/foundation.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:teledesk/src/feature/authentication/data/authentication_repository.dart';
 import 'package:teledesk/src/feature/authentication/model/identity.dart';
+import 'package:teledesk/src/feature/worker_creation/data/worker_creation_repository.dart';
+import 'package:teledesk/src/feature/worker_status_manager/data/worker_status_manager_repository.dart';
 import 'package:teledesk/src/feature/workers/data/worker_repository.dart';
 
 part 'authentication_controller.freezed.dart';
@@ -57,19 +59,25 @@ sealed class AuthenticationState with _$AuthenticationState {
 final class AuthenticationController extends StateController<AuthenticationState>
     with DroppableControllerHandler {
   AuthenticationController({
-    required IAuthenticationRepository authenticationRepository,
-    required IWorkerRepository workerRepository,
+    required final IAuthenticationRepository authenticationRepository,
+    required final IWorkerCreationRepository workerCreationRepository,
+    required final IWorkerStatusManagerRepository workerStatusManagerRepository,
+    required final IWorkerRepository workerRepository,
     super.initialState = const AuthenticationState.idle(),
   }) : _iAuthenticationRepository = authenticationRepository,
-       _repository = workerRepository;
+       _iWorkerRepository = workerRepository,
+       _iWorkerCreationRepository = workerCreationRepository,
+       _iWorkerStatusManagerRepository = workerStatusManagerRepository;
 
   final IAuthenticationRepository _iAuthenticationRepository;
-  final IWorkerRepository _repository;
+  final IWorkerRepository _iWorkerRepository;
+  final IWorkerCreationRepository _iWorkerCreationRepository;
+  final IWorkerStatusManagerRepository _iWorkerStatusManagerRepository;
 
   /// Check if first-time setup is needed
   void checkSetup() => handle(() async {
     setState(const AuthenticationState.inProgress());
-    final count = await _repository.countWorkers();
+    final count = await _iWorkerRepository.countWorkers();
     if (count == 0) {
       setState(const AuthenticationState.needsSetup());
     } else {
@@ -84,14 +92,14 @@ final class AuthenticationController extends StateController<AuthenticationState
     required String displayName,
   }) => handle(() async {
     setState(const AuthenticationState.inProgress());
-    final worker = await _repository.createWorker(
+    final worker = await _iWorkerCreationRepository.createWorker(
       username: username,
       password: password,
       displayName: displayName,
       role: IdentityRole.admin,
       colorCode: '#6366F1',
     );
-    await _repository.updateStatus(worker.id, IdentityStatus.online);
+    await _iWorkerStatusManagerRepository.updateStatus(worker.id, IdentityStatus.online);
     // Store as Admin identity
     final admin = Admin(
       id: worker.id,
@@ -112,7 +120,7 @@ final class AuthenticationController extends StateController<AuthenticationState
       setState(const AuthenticationState.error('Invalid username or password'));
       return;
     }
-    await _repository.updateStatus(identity.id, IdentityStatus.online);
+    await _iWorkerStatusManagerRepository.updateStatus(identity.id, IdentityStatus.online);
     setState(AuthenticationState.authenticated(identity));
   }, error: (e, st) async => setState(AuthenticationState.error(e.toString())));
 
@@ -120,7 +128,7 @@ final class AuthenticationController extends StateController<AuthenticationState
   void signOut() => handle(() async {
     final identity = state.identity;
     if (identity != null) {
-      await _repository.updateStatus(identity.id, IdentityStatus.offline);
+      await _iWorkerStatusManagerRepository.updateStatus(identity.id, IdentityStatus.offline);
     }
     setState(const AuthenticationState.idle());
   });

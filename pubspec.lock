@@ -204,11 +204,12 @@ packages:
   control:
     dependency: "direct main"
     description:
-      name: control
-      sha256: b34100ed36b701354ebeb44df4c2d1a2ffb9842ac8d1e0b9116352658668849d
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.2.0"
+      path: "."
+      ref: master
+      resolved-ref: "685a9bc6ef60c987b99b5526e125813adba54e2a"
+      url: "https://github.com/PlugFox/control.git"
+    source: git
+    version: "1.0.0-dev.1"
   convert:
     dependency: "direct main"
     description:
@@ -668,6 +669,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.20.2"
+  intl_utils:
+    dependency: "direct main"
+    description:
+      name: intl_utils
+      sha256: "07469a81dcb011ab3708ed4a324403f0f556f2e3663b769006f92c9e62a0066a"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.8.14"
   io:
     dependency: transitive
     description:

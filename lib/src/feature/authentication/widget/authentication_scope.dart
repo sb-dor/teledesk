@@ -27,11 +27,13 @@ class AuthenticationScope extends StatefulWidget {
 
 class _AuthenticationScopeState extends State<AuthenticationScope> {
   late final AuthenticationController controller;
+  late final Dependencies _dependencies;
 
   @override
   void initState() {
     super.initState();
-    controller = Dependencies.of(context).authenticationController;
+    _dependencies = Dependencies.of(context);
+    controller = _dependencies.authenticationController;
     controller
       ..addListener(_listener)
       // Check if first-time setup is needed
@@ -42,7 +44,7 @@ class _AuthenticationScopeState extends State<AuthenticationScope> {
     if (!mounted) return;
     setState(() {});
     // Start/stop polling based on auth state
-    final pollingController = Dependencies.of(context).telegramPollingController;
+    final pollingController = _dependencies.telegramPollingController;
     if (controller.state.isAuthenticated) {
       pollingController.startPolling();
     } else {

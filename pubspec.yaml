@@ -52,6 +52,7 @@ dependencies:
   flutter_localizations:
     sdk: flutter
   intl: any
+  intl_utils: ^2.8.14
 
   # Routing
   octopus: ^0.0.9
@@ -79,7 +80,10 @@ dependencies:
   window_manager: ^0.5.1
 
   # State management
-  control: ^0.2.0
+  control:
+    git:
+      url: https://github.com/PlugFox/control.git
+      ref: master
 
   # Database
   shared_preferences: ^2.5.4

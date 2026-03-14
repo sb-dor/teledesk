@@ -3,6 +3,7 @@ import 'package:teledesk/src/feature/authentication/model/identity.dart';
 import 'package:teledesk/src/feature/authentication/widget/authentication_scope.dart';
 import 'package:teledesk/src/feature/initialization/models/dependencies.dart';
 import 'package:teledesk/src/feature/workers/controller/workers_controller.dart';
+import 'package:teledesk/src/feature/workers/data/worker_repository.dart';
 
 const List<String> _kColors = ['#6366F1', '#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6'];
 
@@ -23,8 +24,10 @@ class _WorkersScreenState extends State<WorkersScreen> {
   @override
   void initState() {
     super.initState();
-    final deps = Dependencies.of(context);
-    _controller = WorkersController(repository: deps.workerRepository)..load();
+    final dependencies = Dependencies.of(context);
+    _controller = WorkersController(
+      repository: WorkerRepositoryImpl(database: dependencies.database),
+    )..load();
     _controller.addListener(_onStateChanged);
   }
 
@@ -34,8 +37,9 @@ class _WorkersScreenState extends State<WorkersScreen> {
 
   @override
   void dispose() {
-    _controller.removeListener(_onStateChanged);
-    _controller.dispose();
+    _controller
+      ..removeListener(_onStateChanged)
+      ..dispose();
     super.dispose();
   }
 
@@ -69,58 +73,61 @@ class _WorkersScreenState extends State<WorkersScreen> {
     final state = _controller.state;
 
     Widget body;
-    if (state is Workers$LoadingState) {
-      body = const Center(child: CircularProgressIndicator());
-    } else if (state is Workers$ErrorState) {
-      body = Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.error_outline_rounded, size: 48, color: Colors.red),
-            const SizedBox(height: 16),
-            Text(state.message, textAlign: TextAlign.center),
-            const SizedBox(height: 16),
-            FilledButton(onPressed: _controller.load, child: const Text('Retry')),
-          ],
-        ),
-      );
-    } else {
-      final workers = (state as Workers$IdleState).workers;
-      if (workers.isEmpty) {
+
+    switch (state) {
+      case Workers$IdleState():
+        body = const SizedBox.shrink();
+      case Workers$InProgressState():
+        body = const Center(child: CircularProgressIndicator.adaptive());
+      case Workers$ErrorState():
         body = Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(
-                Icons.people_outline_rounded,
-                size: 64,
-                color: colorScheme.onSurfaceVariant.withOpacity(0.4),
-              ),
+              const Icon(Icons.error_outline_rounded, size: 48, color: Colors.red),
               const SizedBox(height: 16),
-              Text(
-                'No workers yet',
-                style: theme.textTheme.titleMedium?.copyWith(color: colorScheme.onSurfaceVariant),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Tap + to add a worker',
-                style: theme.textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
-              ),
+              Text(state.message ?? '', textAlign: TextAlign.center),
+              const SizedBox(height: 16),
+              FilledButton(onPressed: _controller.load, child: const Text('Retry')),
             ],
           ),
         );
-      } else {
-        body = ListView.separated(
-          padding: const EdgeInsets.all(16),
-          itemCount: workers.length,
-          separatorBuilder: (_, __) => const SizedBox(height: 8),
-          itemBuilder: (ctx, i) => _WorkerCard(
-            worker: workers[i],
-            onChangePassword: () => _showChangePasswordDialog(context, workers[i].id),
-            onDeactivate: () => _confirmDeactivate(context, workers[i]),
-          ),
-        );
-      }
+      case Workers$CompletedState():
+        if (state.workers.isEmpty) {
+          body = Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.people_outline_rounded,
+                  size: 64,
+                  color: colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'No workers yet',
+                  style: theme.textTheme.titleMedium?.copyWith(color: colorScheme.onSurfaceVariant),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Tap + to add a worker',
+                  style: theme.textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
+                ),
+              ],
+            ),
+          );
+        } else {
+          body = ListView.separated(
+            padding: const EdgeInsets.all(16),
+            itemCount: state.workers.length,
+            separatorBuilder: (_, __) => const SizedBox(height: 8),
+            itemBuilder: (ctx, i) => _WorkerCard(
+              worker: state.workers[i],
+              onChangePassword: () => _showChangePasswordDialog(context, state.workers[i].id),
+              onDeactivate: () => _confirmDeactivate(context, state.workers[i]),
+            ),
+          );
+        }
     }
 
     return Scaffold(
@@ -233,7 +240,7 @@ class _WorkersScreenState extends State<WorkersScreen> {
                             width: 2.5,
                           ),
                           boxShadow: isSelected
-                              ? [BoxShadow(color: color.withOpacity(0.5), blurRadius: 6)]
+                              ? [BoxShadow(color: color.withValues(alpha: 0.5), blurRadius: 6)]
                               : null,
                         ),
                         child: isSelected
@@ -252,13 +259,13 @@ class _WorkersScreenState extends State<WorkersScreen> {
               onPressed: () {
                 if (formKey.currentState!.validate()) {
                   Navigator.of(ctx).pop();
-                  _controller.addWorker(
-                    username: usernameCtrl.text.trim(),
-                    password: passwordCtrl.text,
-                    displayName: nameCtrl.text.trim(),
-                    role: selectedRole,
-                    colorCode: selectedColor,
-                  );
+                  // _controller.addWorker(
+                  //   username: usernameCtrl.text.trim(),
+                  //   password: passwordCtrl.text,
+                  //   displayName: nameCtrl.text.trim(),
+                  //   role: selectedRole,
+                  //   colorCode: selectedColor,
+                  // );
                 }
               },
               child: const Text('Add'),
@@ -295,10 +302,10 @@ class _WorkersScreenState extends State<WorkersScreen> {
               onPressed: () {
                 if (ctrl.text.length >= 6) {
                   Navigator.of(ctx).pop();
-                  _controller.changePassword(workerId, ctrl.text);
-                  ScaffoldMessenger.of(
-                    context,
-                  ).showSnackBar(const SnackBar(content: Text('Password updated')));
+                  // _controller.changePassword(workerId, ctrl.text);
+                  // ScaffoldMessenger.of(
+                  //   context,
+                  // ).showSnackBar(const SnackBar(content: Text('Password updated')));
                 }
               },
               child: const Text('Save'),
@@ -321,8 +328,8 @@ class _WorkersScreenState extends State<WorkersScreen> {
           TextButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text('Cancel')),
           FilledButton(
             onPressed: () {
-              Navigator.of(ctx).pop();
-              _controller.deactivate(worker.id);
+              // Navigator.of(ctx).pop();
+              // _controller.deactivate(worker.id);
             },
             style: FilledButton.styleFrom(backgroundColor: Theme.of(ctx).colorScheme.error),
             child: const Text('Deactivate'),
@@ -375,7 +382,7 @@ class _WorkerCard extends StatelessWidget {
               children: [
                 CircleAvatar(
                   radius: 24,
-                  backgroundColor: workerColor.withOpacity(0.2),
+                  backgroundColor: workerColor.withValues(alpha: 0.2),
                   child: Text(
                     worker.initials,
                     style: TextStyle(color: workerColor, fontWeight: FontWeight.bold),

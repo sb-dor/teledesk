@@ -19,13 +19,13 @@ import 'package:teledesk/src/common/util/screen_util.dart';
 import 'package:teledesk/src/feature/authentication/controller/authentication_controller.dart';
 import 'package:teledesk/src/feature/authentication/data/authentication_repository.dart';
 import 'package:teledesk/src/feature/bot_settings/data/bot_settings_repository.dart';
-import 'package:teledesk/src/feature/chats/data/conversation_repository.dart';
+import 'package:teledesk/src/feature/conversation/data/conversation_repository.dart';
 import 'package:teledesk/src/feature/initialization/data/platform/platform_initialization.dart';
 import 'package:teledesk/src/feature/initialization/models/dependencies.dart';
-import 'package:teledesk/src/feature/message/data/message_repository.dart';
-import 'package:teledesk/src/feature/quick_replies/data/quick_reply_repository.dart';
 import 'package:teledesk/src/feature/telegram/controller/telegram_polling_controller.dart';
 import 'package:teledesk/src/feature/telegram/data/telegram_repository.dart';
+import 'package:teledesk/src/feature/worker_creation/data/worker_creation_repository.dart';
+import 'package:teledesk/src/feature/worker_status_manager/data/worker_status_manager_repository.dart';
 import 'package:teledesk/src/feature/workers/data/worker_repository.dart';
 
 /// Initializes the app and returns a [Dependencies] object
@@ -78,16 +78,8 @@ final Map<String, _InitializationStep> _initializationSteps = <String, _Initiali
   'Connect to database': (dependencies) => dependencies.database = Config.inMemoryDatabase
       ? AppDatabase.defaults(name: 'memory')
       : AppDatabase.defaults(name: 'teledesk_db'),
-  'Initialize Telegram repository': (dependencies) =>
-      dependencies.telegramRepository = TelegramRepositoryImpl(botToken: Config.telegramBotToken),
-  'Initialize Worker repository': (dependencies) => dependencies.workerRepository =
-      WorkerRepositoryImpl(database: dependencies.database, cryptoUtil: CryptoUtil()),
-  'Initialize Conversation repository': (dependencies) => dependencies.conversationRepository =
-      ConversationRepositoryImpl(database: dependencies.database),
-  'Initialize Message repository': (dependencies) =>
-      dependencies.messageRepository = MessageRepositoryImpl(database: dependencies.database),
-  'Initialize QuickReply repository': (dependencies) =>
-      dependencies.quickReplyRepository = QuickReplyRepositoryImpl(database: dependencies.database),
+  'Initialize Telegram repository': (dependencies) => dependencies.telegramRepository =
+      TelegramRepositoryImpl(botToken: Config.telegramBotToken, appDatabase: dependencies.database),
   'Initialize BotSettings repository': (dependencies) =>
       dependencies.botSettingsRepository = BotSettingsRepositoryImpl(
         database: dependencies.database,
@@ -96,13 +88,19 @@ final Map<String, _InitializationStep> _initializationSteps = <String, _Initiali
   'Initialize Telegram polling controller': (dependencies) =>
       dependencies.telegramPollingController = TelegramPollingController(
         telegramRepository: dependencies.telegramRepository,
-        conversationRepository: dependencies.conversationRepository,
-        messageRepository: dependencies.messageRepository,
+        conversationRepository: ConversationRepositoryImpl(database: dependencies.database),
         pollingTimeoutSeconds: Config.pollingTimeoutSeconds,
       ),
   'Prepare authentication controller': (dependencies) =>
       dependencies.authenticationController = AuthenticationController(
-        workerRepository: dependencies.workerRepository,
+        workerRepository: WorkerRepositoryImpl(database: dependencies.database),
+        workerCreationRepository: WorkerCreationRepositoryImpl(
+          database: dependencies.database,
+          cryptoUtil: CryptoUtil(),
+        ),
+        workerStatusManagerRepository: WorkerStatusManagerRepositoryImpl(
+          database: dependencies.database,
+        ),
         authenticationRepository: AuthenticationRepositoryImpl(
           appDatabase: dependencies.database,
           cryptoUtil: CryptoUtil(),

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:teledesk/src/common/util/screen_util.dart';
 import 'package:teledesk/src/feature/authentication/widget/authentication_scope.dart';
 import 'package:teledesk/src/feature/chats/controller/chats_controller.dart';
-import 'package:teledesk/src/feature/chats/data/conversation_repository.dart';
+import 'package:teledesk/src/feature/chats/data/chats_repository.dart';
 import 'package:teledesk/src/feature/chats/widget/controllers/chats_data_controller.dart';
 import 'package:teledesk/src/feature/chats/widget/desktop/chats_desktop_widget.dart';
 import 'package:teledesk/src/feature/chats/widget/mobile/chats_mobile_widget.dart';
@@ -33,12 +33,11 @@ class ChatsConfigWidget extends StatefulWidget {
 class ChatsConfigWidgetState extends State<ChatsConfigWidget> {
   ChatsController? _chatsController;
   ChatsDataController? _chatsDataController;
-  IConversationRepository? _conversationRepository;
   bool _initialized = false;
 
   ChatsController get chatsController => _chatsController!;
+
   ChatsDataController get chatsDataController => _chatsDataController!;
-  IConversationRepository get conversationRepository => _conversationRepository!;
 
   @override
   void initState() {
@@ -51,11 +50,10 @@ class ChatsConfigWidgetState extends State<ChatsConfigWidget> {
     super.didChangeDependencies();
     if (_initialized) return;
     _initialized = true;
-    final deps = Dependencies.of(context);
-    _conversationRepository = deps.conversationRepository;
+    final dependencies = Dependencies.of(context);
     final worker = AuthenticationScope.identityOf(context);
     _chatsController = ChatsController(
-      repository: _conversationRepository!,
+      repository: ChatsRepositoryImpl(database: dependencies.database),
       workerId: worker?.id ?? 0,
     )..initialize();
   }

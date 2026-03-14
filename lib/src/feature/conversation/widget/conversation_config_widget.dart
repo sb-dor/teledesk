@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:teledesk/src/common/util/screen_util.dart';
 import 'package:teledesk/src/feature/authentication/widget/authentication_scope.dart';
 import 'package:teledesk/src/feature/conversation/controller/conversation_controller.dart';
+import 'package:teledesk/src/feature/conversation/data/conversation_repository.dart';
 import 'package:teledesk/src/feature/conversation/widget/controllers/conversation_data_controller.dart';
 import 'package:teledesk/src/feature/conversation/widget/desktop/conversation_desktop_widget.dart';
 import 'package:teledesk/src/feature/conversation/widget/mobile/conversation_mobile_widget.dart';
@@ -44,7 +45,9 @@ class ConversationConfigWidgetState extends State<ConversationConfigWidget> {
   bool _initialized = false;
 
   ConversationController get conversationController => _conversationController!;
+
   ConversationDataController get conversationDataController => _conversationDataController!;
+
   IQuickReplyRepository get quickReplyRepository => _quickReplyRepository!;
 
   @override
@@ -58,12 +61,10 @@ class ConversationConfigWidgetState extends State<ConversationConfigWidget> {
     super.didChangeDependencies();
     if (_initialized) return;
     _initialized = true;
-    final deps = Dependencies.of(context);
-    _quickReplyRepository = deps.quickReplyRepository;
+    final dependencies = Dependencies.of(context);
     _conversationController = ConversationController(
-      repository: deps.conversationRepository,
-      messageRepository: deps.messageRepository,
-      telegram: deps.telegramRepository,
+      repository: ConversationRepositoryImpl(database: dependencies.database),
+      telegram: dependencies.telegramRepository,
       conversationId: widget.conversationId,
       currentWorkerId: AuthenticationScope.identityOf(context)?.id ?? 0,
     )..initialize();

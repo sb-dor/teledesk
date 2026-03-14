@@ -86,10 +86,10 @@ class _ChatsDesktopWidgetState extends State<ChatsDesktopWidget> {
                       ),
                       onChanged: (q) async {
                         dataController.setSearchQuery(q);
-                        if (q.isNotEmpty) {
-                          final results = await scope.conversationRepository.searchConversations(q);
-                          dataController.setSearchResults(results);
-                        }
+                        // if (q.isNotEmpty) {
+                        //   final results = await scope.conversationRepository.searchConversations(q);
+                        //   dataController.setSearchResults(results);
+                        // }
                       },
                     ),
                   ),
@@ -156,7 +156,7 @@ class _ChatsDesktopWidgetState extends State<ChatsDesktopWidget> {
             Icon(
               Icons.chat_bubble_outline_rounded,
               size: 64,
-              color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.4),
+              color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
             ),
             const SizedBox(height: 16),
             Text(
@@ -308,7 +308,7 @@ class _ConversationTile extends StatelessWidget {
               children: [
                 CircleAvatar(
                   radius: 24,
-                  backgroundColor: avatarColor.withOpacity(0.2),
+                  backgroundColor: avatarColor.withValues(alpha: 0.2),
                   child: Text(
                     initials,
                     style: TextStyle(color: avatarColor, fontWeight: FontWeight.bold, fontSize: 14),

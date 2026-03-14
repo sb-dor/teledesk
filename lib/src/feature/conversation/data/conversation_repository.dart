@@ -1,21 +1,10 @@
 import 'package:drift/drift.dart';
 import 'package:teledesk/src/common/database/database.dart';
 import 'package:teledesk/src/feature/chats/model/chat_message.dart';
+import 'package:teledesk/src/feature/chats/model/conversation.dart';
 
-abstract interface class IMessageRepository {
-  Stream<List<ChatMessage>> watchMessages(int conversationId);
-
-  Future<ChatMessage> saveIncomingMessage({
-    required int conversationId,
-    required int telegramMessageId,
-    required String messageType,
-    String? text,
-    String? fileId,
-    String? fileName,
-    String? fileMimeType,
-    int? fileSize,
-    required DateTime sentAt,
-  });
+abstract interface class IConversationRepository {
+  Stream<List<Conversation>> watchConversations();
 
   Future<ChatMessage> saveOutgoingMessage({
     required int conversationId,
@@ -27,6 +16,8 @@ abstract interface class IMessageRepository {
     required DateTime sentAt,
   });
 
+  Stream<List<ChatMessage>> watchMessages(int conversationId);
+
   Future<ChatMessage> saveNote({
     required int conversationId,
     required String text,
@@ -36,12 +27,40 @@ abstract interface class IMessageRepository {
   Future<void> markMessagesRead(int conversationId);
 
   Future<void> updateLastMessage(int conversationId, String preview, DateTime time);
+
+  Future<void> assignConversation(int conversationId, int workerId);
+
+  Future<void> transferConversation(int conversationId, int newWorkerId);
+
+  Future<void> allowUserToFinish(int conversationId);
+
+  Future<void> finishConversation(int conversationId);
 }
 
-final class MessageRepositoryImpl implements IMessageRepository {
-  MessageRepositoryImpl({required AppDatabase database}) : _db = database;
+final class ConversationRepositoryImpl implements IConversationRepository {
+  ConversationRepositoryImpl({required AppDatabase database}) : _db = database;
 
   final AppDatabase _db;
+
+  Conversation _rowToConversation(ConversationsTblData row) => Conversation(
+    id: row.id,
+    telegramUserId: row.telegramUserId,
+    telegramUsername: row.telegramUsername,
+    firstName: row.firstName,
+    lastName: row.lastName,
+    status: switch (row.status) {
+      'in_progress' => ConversationStatus.inProgress,
+      'finish_requested' => ConversationStatus.finishRequested,
+      'finished' => ConversationStatus.finished,
+      _ => ConversationStatus.open,
+    },
+    assignedWorkerId: row.assignedWorkerId,
+    canUserFinish: row.canUserFinish,
+    unreadCount: row.unreadCount,
+    lastMessageAt: DateTime.fromMillisecondsSinceEpoch(row.lastMessageAt * 1000),
+    lastMessagePreview: row.lastMessagePreview,
+    createdAt: DateTime.fromMillisecondsSinceEpoch(row.createdAt * 1000),
+  );
 
   ChatMessage _rowToMessage(MessagesTblData row) => ChatMessage(
     id: row.id,
@@ -72,74 +91,12 @@ final class MessageRepositoryImpl implements IMessageRepository {
   );
 
   @override
-  Stream<List<ChatMessage>> watchMessages(int conversationId) =>
-      (_db.select(_db.messagesTbl)
-            ..where((t) => t.conversationId.equals(conversationId))
-            ..orderBy([(t) => OrderingTerm.asc(t.sentAt)]))
+  Stream<List<Conversation>> watchConversations() =>
+      (_db.select(_db.conversationsTbl)
+            ..where((t) => t.status.isNotValue('finished'))
+            ..orderBy([(t) => OrderingTerm.desc(t.lastMessageAt)]))
           .watch()
-          .map((rows) => rows.map(_rowToMessage).toList());
-
-  @override
-  Future<ChatMessage> saveIncomingMessage({
-    required int conversationId,
-    required int telegramMessageId,
-    required String messageType,
-    String? text,
-    String? fileId,
-    String? fileName,
-    String? fileMimeType,
-    int? fileSize,
-    required DateTime sentAt,
-  }) async {
-    final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
-    final sentAtTs = sentAt.millisecondsSinceEpoch ~/ 1000;
-    final id = await _db
-        .into(_db.messagesTbl)
-        .insert(
-          MessagesTblCompanion.insert(
-            conversationId: conversationId,
-            telegramMessageId: Value(telegramMessageId),
-            messageType: messageType,
-            messageText: Value(text),
-            fileId: Value(fileId),
-            fileName: Value(fileName),
-            fileMimeType: Value(fileMimeType),
-            fileSize: Value(fileSize),
-            isFromBot: const Value(false),
-            isNote: const Value(false),
-            sentByWorkerId: const Value(null),
-            isRead: const Value(false),
-            sentAt: sentAtTs,
-            createdAt: now,
-          ),
-        );
-    return ChatMessage(
-      id: id,
-      conversationId: conversationId,
-      telegramMessageId: telegramMessageId,
-      type: switch (messageType) {
-        'photo' => MessageType.photo,
-        'video' => MessageType.video,
-        'gif' => MessageType.gif,
-        'sticker' => MessageType.sticker,
-        'document' => MessageType.document,
-        'voice' => MessageType.voice,
-        'video_note' => MessageType.videoNote,
-        'audio' => MessageType.audio,
-        _ => MessageType.text,
-      },
-      text: text,
-      fileId: fileId,
-      fileName: fileName,
-      fileMimeType: fileMimeType,
-      fileSize: fileSize,
-      isFromBot: false,
-      isNote: false,
-      sentByWorkerId: null,
-      isRead: false,
-      sentAt: sentAt,
-    );
-  }
+          .map((rows) => rows.map(_rowToConversation).toList());
 
   @override
   Future<ChatMessage> saveOutgoingMessage({
@@ -194,6 +151,14 @@ final class MessageRepositoryImpl implements IMessageRepository {
       sentAt: sentAt,
     );
   }
+
+  @override
+  Stream<List<ChatMessage>> watchMessages(int conversationId) =>
+      (_db.select(_db.messagesTbl)
+            ..where((t) => t.conversationId.equals(conversationId))
+            ..orderBy([(t) => OrderingTerm.asc(t.sentAt)]))
+          .watch()
+          .map((rows) => rows.map(_rowToMessage).toList());
 
   @override
   Future<ChatMessage> saveNote({
@@ -271,5 +236,41 @@ final class MessageRepositoryImpl implements IMessageRepository {
         ConversationsTblCompanion(unreadCount: Value(row.unreadCount + 1)),
       );
     }
+  }
+
+  @override
+  Future<void> assignConversation(int conversationId, int workerId) async {
+    final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+    await (_db.update(_db.conversationsTbl)..where((t) => t.id.equals(conversationId))).write(
+      ConversationsTblCompanion(
+        status: const Value('in_progress'),
+        assignedWorkerId: Value(workerId),
+        updatedAt: Value(now),
+      ),
+    );
+  }
+
+  @override
+  Future<void> transferConversation(int conversationId, int newWorkerId) async {
+    final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+    await (_db.update(_db.conversationsTbl)..where((t) => t.id.equals(conversationId))).write(
+      ConversationsTblCompanion(assignedWorkerId: Value(newWorkerId), updatedAt: Value(now)),
+    );
+  }
+
+  @override
+  Future<void> allowUserToFinish(int conversationId) async {
+    final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+    await (_db.update(_db.conversationsTbl)..where((t) => t.id.equals(conversationId))).write(
+      ConversationsTblCompanion(canUserFinish: const Value(true), updatedAt: Value(now)),
+    );
+  }
+
+  @override
+  Future<void> finishConversation(int conversationId) async {
+    final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+    await (_db.update(_db.conversationsTbl)..where((t) => t.id.equals(conversationId))).write(
+      ConversationsTblCompanion(status: const Value('finished'), updatedAt: Value(now)),
+    );
   }
 }

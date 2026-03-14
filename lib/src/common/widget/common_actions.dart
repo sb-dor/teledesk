@@ -3,7 +3,6 @@ import 'dart:collection';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:teledesk/src/common/widget/history_button.dart';
-import 'package:teledesk/src/feature/authentication/widget/log_out_button.dart';
 import 'package:teledesk/src/feature/developer/widget/developer_button.dart';
 
 class CommonActions extends ListBase<Widget> {
@@ -12,7 +11,6 @@ class CommonActions extends ListBase<Widget> {
         ...?actions,
         if (!kReleaseMode) const DeveloperButton(),
         const HistoryButton(),
-        const LogOutButton(),
       ];
 
   final List<Widget> _actions;

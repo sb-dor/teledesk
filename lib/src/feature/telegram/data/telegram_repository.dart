@@ -1,8 +1,11 @@
 import 'dart:convert';
-import 'dart:typed_data';
 
+import 'package:drift/drift.dart';
 import 'package:http/http.dart' as http;
+import 'package:teledesk/src/common/database/database.dart';
 import 'package:teledesk/src/feature/bot_settings/model/bot_command.dart';
+import 'package:teledesk/src/feature/chats/model/chat_message.dart';
+import 'package:teledesk/src/feature/chats/model/conversation.dart';
 import 'package:teledesk/src/feature/telegram/model/telegram_update.dart';
 
 abstract interface class ITelegramRepository {
@@ -73,16 +76,59 @@ abstract interface class ITelegramRepository {
 
   /// Get file download URL
   Future<String?> getFileUrl({required String fileId});
+
+  Future<Conversation?> findByTelegramUserId(int telegramUserId);
+
+  Future<Conversation> createOrGetConversation({
+    required int telegramUserId,
+    String? username,
+    String? firstName,
+    String? lastName,
+  });
+
+  Future<ChatMessage> saveIncomingMessage({
+    required int conversationId,
+    required int telegramMessageId,
+    required String messageType,
+    String? text,
+    String? fileId,
+    String? fileName,
+    String? fileMimeType,
+    int? fileSize,
+    required DateTime sentAt,
+  });
 }
 
 final class TelegramRepositoryImpl implements ITelegramRepository {
-  TelegramRepositoryImpl({required String botToken})
+  TelegramRepositoryImpl({required String botToken, required final AppDatabase appDatabase})
     : _baseUrl = 'https://api.telegram.org/bot$botToken',
-      _fileBaseUrl = 'https://api.telegram.org/file/bot$botToken';
+      _fileBaseUrl = 'https://api.telegram.org/file/bot$botToken',
+      _db = appDatabase;
 
   final String _baseUrl;
   final String _fileBaseUrl;
   final http.Client _client = http.Client();
+  final AppDatabase _db;
+
+  Conversation _rowToConversation(ConversationsTblData row) => Conversation(
+    id: row.id,
+    telegramUserId: row.telegramUserId,
+    telegramUsername: row.telegramUsername,
+    firstName: row.firstName,
+    lastName: row.lastName,
+    status: switch (row.status) {
+      'in_progress' => ConversationStatus.inProgress,
+      'finish_requested' => ConversationStatus.finishRequested,
+      'finished' => ConversationStatus.finished,
+      _ => ConversationStatus.open,
+    },
+    assignedWorkerId: row.assignedWorkerId,
+    canUserFinish: row.canUserFinish,
+    unreadCount: row.unreadCount,
+    lastMessageAt: DateTime.fromMillisecondsSinceEpoch(row.lastMessageAt * 1000),
+    lastMessagePreview: row.lastMessagePreview,
+    createdAt: DateTime.fromMillisecondsSinceEpoch(row.createdAt * 1000),
+  );
 
   Future<Map<String, dynamic>> _post(String method, Map<String, dynamic> body) async {
     final response = await _client
@@ -313,5 +359,156 @@ final class TelegramRepositoryImpl implements ITelegramRepository {
     } catch (_) {
       return null;
     }
+  }
+
+  @override
+  Future<ChatMessage> saveIncomingMessage({
+    required int conversationId,
+    required int telegramMessageId,
+    required String messageType,
+    String? text,
+    String? fileId,
+    String? fileName,
+    String? fileMimeType,
+    int? fileSize,
+    required DateTime sentAt,
+  }) async {
+    final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+    final sentAtTs = sentAt.millisecondsSinceEpoch ~/ 1000;
+    final id = await _db
+        .into(_db.messagesTbl)
+        .insert(
+          MessagesTblCompanion.insert(
+            conversationId: conversationId,
+            telegramMessageId: Value(telegramMessageId),
+            messageType: messageType,
+            messageText: Value(text),
+            fileId: Value(fileId),
+            fileName: Value(fileName),
+            fileMimeType: Value(fileMimeType),
+            fileSize: Value(fileSize),
+            isFromBot: const Value(false),
+            isNote: const Value(false),
+            sentByWorkerId: const Value(null),
+            isRead: const Value(false),
+            sentAt: sentAtTs,
+            createdAt: now,
+          ),
+        );
+    return ChatMessage(
+      id: id,
+      conversationId: conversationId,
+      telegramMessageId: telegramMessageId,
+      type: switch (messageType) {
+        'photo' => MessageType.photo,
+        'video' => MessageType.video,
+        'gif' => MessageType.gif,
+        'sticker' => MessageType.sticker,
+        'document' => MessageType.document,
+        'voice' => MessageType.voice,
+        'video_note' => MessageType.videoNote,
+        'audio' => MessageType.audio,
+        _ => MessageType.text,
+      },
+      text: text,
+      fileId: fileId,
+      fileName: fileName,
+      fileMimeType: fileMimeType,
+      fileSize: fileSize,
+      isFromBot: false,
+      isNote: false,
+      sentByWorkerId: null,
+      isRead: false,
+      sentAt: sentAt,
+    );
+  }
+
+  @override
+  Future<Conversation> createOrGetConversation({
+    required int telegramUserId,
+    String? username,
+    String? firstName,
+    String? lastName,
+  }) async {
+    final existing = await findByTelegramUserId(telegramUserId);
+    if (existing != null) {
+      final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+      if (existing.status == ConversationStatus.finished) {
+        // User wrote back after conversation was closed — re-open it
+        await (_db.update(
+          _db.conversationsTbl,
+        )..where((t) => t.telegramUserId.equals(telegramUserId))).write(
+          ConversationsTblCompanion(
+            telegramUsername: Value(username),
+            firstName: Value(firstName),
+            lastName: Value(lastName),
+            status: const Value('open'),
+            assignedWorkerId: const Value(null),
+            canUserFinish: const Value(false),
+            unreadCount: const Value(1),
+            updatedAt: Value(now),
+          ),
+        );
+        return existing.copyWith(
+          status: ConversationStatus.open,
+          assignedWorkerId: () => null,
+          canUserFinish: false,
+          unreadCount: 1,
+        );
+      }
+      await (_db.update(
+        _db.conversationsTbl,
+      )..where((t) => t.telegramUserId.equals(telegramUserId))).write(
+        ConversationsTblCompanion(
+          telegramUsername: Value(username),
+          firstName: Value(firstName),
+          lastName: Value(lastName),
+          updatedAt: Value(now),
+        ),
+      );
+      return existing;
+    }
+    final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+    final id = await _db
+        .into(_db.conversationsTbl)
+        .insert(
+          ConversationsTblCompanion.insert(
+            telegramUserId: telegramUserId,
+            telegramUsername: Value(username),
+            firstName: Value(firstName),
+            lastName: Value(lastName),
+            status: const Value('open'),
+            assignedWorkerId: const Value(null),
+            canUserFinish: const Value(false),
+            unreadCount: const Value(1),
+            lastMessageAt: now,
+            lastMessagePreview: const Value(null),
+            createdAt: now,
+            updatedAt: now,
+          ),
+        );
+    return Conversation(
+      id: id,
+      telegramUserId: telegramUserId,
+      telegramUsername: username,
+      firstName: firstName,
+      lastName: lastName,
+      status: ConversationStatus.open,
+      assignedWorkerId: null,
+      canUserFinish: false,
+      unreadCount: 1,
+      lastMessageAt: DateTime.fromMillisecondsSinceEpoch(now * 1000),
+      lastMessagePreview: null,
+      createdAt: DateTime.fromMillisecondsSinceEpoch(now * 1000),
+    );
+  }
+
+  @override
+  Future<Conversation?> findByTelegramUserId(int telegramUserId) async {
+    final row = await (_db.select(
+      _db.conversationsTbl,
+    )..where((t) => t.telegramUserId.equals(telegramUserId))).getSingleOrNull();
+    if (row == null) return null;
+    return _rowToConversation(row);
   }
 }

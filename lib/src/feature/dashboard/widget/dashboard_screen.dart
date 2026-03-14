@@ -5,9 +5,27 @@ import 'package:teledesk/src/common/util/screen_util.dart';
 import 'package:teledesk/src/common/widget/main_navigation.dart';
 import 'package:teledesk/src/feature/authentication/model/identity.dart';
 import 'package:teledesk/src/feature/authentication/widget/authentication_scope.dart';
-import 'package:teledesk/src/feature/chats/data/conversation_repository.dart';
-import 'package:teledesk/src/feature/initialization/models/dependencies.dart';
+import 'package:teledesk/src/feature/dashboard/controller/dashboard_controller.dart';
+import 'package:teledesk/src/feature/dashboard/data/dashboard_repository.dart';
+import 'package:teledesk/src/feature/initialization/widget/dependencies_scope.dart';
 import 'package:teledesk/src/feature/telegram/controller/telegram_polling_controller.dart';
+
+class DashboardInhWidget extends InheritedWidget {
+  const DashboardInhWidget({super.key, required this.state, required super.child});
+
+  static DashboardScreenState of(BuildContext context) {
+    final widget = context.getElementForInheritedWidgetOfExactType<DashboardInhWidget>()?.widget;
+    assert(widget != null, 'No DashboardInhWidget found in context');
+    return (widget as DashboardInhWidget).state;
+  }
+
+  final DashboardScreenState state;
+
+  @override
+  bool updateShouldNotify(DashboardInhWidget old) {
+    return false;
+  }
+}
 
 /// {@template dashboard_screen}
 /// DashboardScreen widget.
@@ -17,77 +35,62 @@ class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
 
   @override
-  State<DashboardScreen> createState() => _DashboardScreenState();
+  State<DashboardScreen> createState() => DashboardScreenState();
 }
 
-class _DashboardScreenState extends State<DashboardScreen> {
-  late final IConversationRepository _conversationRepository;
-  late final TelegramPollingController _pollingController;
-  Map<String, int>? _stats;
-  bool _loadingStats = false;
+class DashboardScreenState extends State<DashboardScreen> {
+  late final TelegramPollingController pollingController;
+  late final DashboardController dashboardController;
+  late final Identity? identity;
 
   @override
   void initState() {
     super.initState();
-    _conversationRepository = Dependencies.of(context).conversationRepository;
-    _pollingController = Dependencies.of(context).telegramPollingController;
-    _pollingController.addListener(_onPollingChanged);
-    _loadStats();
+    final dependencies = DependenciesScope.of(context);
+    pollingController = dependencies.telegramPollingController;
+    dashboardController = DashboardController(
+      dashboardRepository: DashboardRepositoryImpl(database: dependencies.database),
+    );
+    identity = AuthenticationScope.identityOf(context, listen: false);
+    pollingController.addListener(_onPollingChanged);
   }
 
   void _onPollingChanged() {
     if (mounted) setState(() {});
   }
 
-  Future<void> _loadStats() async {
-    if (_loadingStats) return;
-    setState(() => _loadingStats = true);
-    try {
-      final stats = await _conversationRepository.getDashboardStats();
-      if (mounted) setState(() => _stats = stats);
-    } finally {
-      if (mounted) setState(() => _loadingStats = false);
-    }
-  }
-
   @override
   void dispose() {
-    _pollingController.removeListener(_onPollingChanged);
+    pollingController.removeListener(_onPollingChanged);
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final worker = AuthenticationScope.identityOf(context);
-    final isPolling = _pollingController.isPolling;
-
     return MainNavigation(
       currentRoute: Routes.dashboard,
-      child: _DashboardScaffold(
-        worker: worker,
-        isPolling: isPolling,
-        stats: _stats,
-        loadingStats: _loadingStats,
-        onRefresh: _loadStats,
+      child: DashboardInhWidget(
+        state: this,
+        child: _DashboardScaffold(worker: identity, isPolling: pollingController.isPolling),
       ),
     );
   }
 }
 
-class _DashboardScaffold extends StatelessWidget {
-  const _DashboardScaffold({
-    required this.worker,
-    required this.isPolling,
-    required this.stats,
-    required this.loadingStats,
-    required this.onRefresh,
-  });
+class _DashboardScaffold extends StatefulWidget {
+  const _DashboardScaffold({required this.worker, required this.isPolling});
 
   final Identity? worker;
   final bool isPolling;
-  final Map<String, int>? stats;
-  final bool loadingStats;
-  final Future<void> Function() onRefresh;
+
+  @override
+  State<_DashboardScaffold> createState() => _DashboardScaffoldState();
+}
+
+class _DashboardScaffoldState extends State<_DashboardScaffold> {
+  late final _dashboardInhWidget = DashboardInhWidget.of(context);
+  late final _dashboardController = _dashboardInhWidget.dashboardController;
+  late final _identity = _dashboardInhWidget.identity;
 
   @override
   Widget build(BuildContext context) {
@@ -107,15 +110,15 @@ class _DashboardScaffold extends StatelessWidget {
                   width: 10,
                   height: 10,
                   decoration: BoxDecoration(
-                    color: isPolling ? Colors.green : Colors.red,
+                    color: widget.isPolling ? Colors.green : Colors.red,
                     shape: BoxShape.circle,
                   ),
                 ),
                 const SizedBox(width: 6),
                 Text(
-                  isPolling ? 'Bot Online' : 'Bot Offline',
+                  widget.isPolling ? 'Bot Online' : 'Bot Offline',
                   style: theme.textTheme.labelMedium?.copyWith(
-                    color: isPolling ? Colors.green : Colors.red,
+                    color: widget.isPolling ? Colors.green : Colors.red,
                   ),
                 ),
               ],
@@ -124,7 +127,7 @@ class _DashboardScaffold extends StatelessWidget {
         ],
       ),
       body: RefreshIndicator(
-        onRefresh: onRefresh,
+        onRefresh: () async => _dashboardController.load(),
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.all(16),
@@ -141,7 +144,7 @@ class _DashboardScaffold extends StatelessWidget {
                         radius: 28,
                         backgroundColor: colorScheme.primaryContainer,
                         child: Text(
-                          worker?.initials ?? '?',
+                          widget.worker?.initials ?? '?',
                           style: TextStyle(
                             color: colorScheme.primary,
                             fontWeight: FontWeight.bold,
@@ -155,14 +158,14 @@ class _DashboardScaffold extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'Hello, ${worker?.displayName ?? 'Agent'}!',
+                              'Hello, ${widget.worker?.displayName ?? 'Agent'}!',
                               style: theme.textTheme.titleLarge?.copyWith(
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              worker?.identityRole.name ?? '',
+                              widget.worker?.identityRole.name ?? '',
                               style: theme.textTheme.bodyMedium?.copyWith(
                                 color: colorScheme.onSurfaceVariant,
                               ),
@@ -182,10 +185,13 @@ class _DashboardScaffold extends StatelessWidget {
               ),
               const SizedBox(height: 12),
 
-              context.screenSizeMaybeWhen(
-                orElse: () => _buildStatsGrid(context, columns: 2),
-                desktop: () => _buildStatsGrid(context, columns: 4),
-                tablet: () => _buildStatsGrid(context, columns: 2),
+              ListenableBuilder(
+                listenable: _dashboardController,
+                builder: (context, child) => context.screenSizeMaybeWhen(
+                  orElse: () => _buildStatsGrid(context, _dashboardController.state, columns: 2),
+                  desktop: () => _buildStatsGrid(context, _dashboardController.state, columns: 4),
+                  tablet: () => _buildStatsGrid(context, _dashboardController.state, columns: 2),
+                ),
               ),
 
               const SizedBox(height: 24),
@@ -204,35 +210,35 @@ class _DashboardScaffold extends StatelessWidget {
     );
   }
 
-  Widget _buildStatsGrid(BuildContext context, {required int columns}) {
+  Widget _buildStatsGrid(BuildContext context, DashboardState state, {required int columns}) {
     final items = [
       _StatItem(
         label: 'Open Chats',
-        value: stats?['open'] ?? 0,
+        value: state.stats['open'] ?? 0,
         icon: Icons.inbox_rounded,
         color: Colors.blue,
-        loading: loadingStats,
+        loading: state.isInProgress,
       ),
       _StatItem(
         label: 'In Progress',
-        value: stats?['inProgress'] ?? 0,
+        value: state.stats['inProgress'] ?? 0,
         icon: Icons.chat_bubble_outline_rounded,
         color: Colors.orange,
-        loading: loadingStats,
+        loading: state.isInProgress,
       ),
       _StatItem(
         label: 'Finished Today',
-        value: stats?['finishedToday'] ?? 0,
+        value: state.stats['finishedToday'] ?? 0,
         icon: Icons.check_circle_outline_rounded,
         color: Colors.green,
-        loading: loadingStats,
+        loading: state.isInProgress,
       ),
       _StatItem(
         label: 'Total Messages',
-        value: stats?['totalMessages'] ?? 0,
+        value: state.stats['totalMessages'] ?? 0,
         icon: Icons.message_outlined,
         color: Colors.purple,
-        loading: loadingStats,
+        loading: state.isInProgress,
       ),
     ];
 
@@ -288,6 +294,7 @@ class _StatItem {
     required this.color,
     required this.loading,
   });
+
   final String label;
   final int value;
   final IconData icon;
@@ -297,6 +304,7 @@ class _StatItem {
 
 class _StatCard extends StatelessWidget {
   const _StatCard({required this.item});
+
   final _StatItem item;
 
   @override
@@ -311,7 +319,7 @@ class _StatCard extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: item.color.withOpacity(0.12),
+                color: item.color.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Icon(item.icon, color: item.color, size: 20),
@@ -351,6 +359,7 @@ class _QuickActionTile extends StatelessWidget {
     required this.color,
     required this.onTap,
   });
+
   final IconData icon;
   final String label;
   final String subtitle;
@@ -365,7 +374,7 @@ class _QuickActionTile extends StatelessWidget {
         leading: Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: color.withOpacity(0.12),
+            color: color.withValues(alpha: 0.12),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Icon(icon, color: color, size: 22),

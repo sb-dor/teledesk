@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:control/control.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
-import 'package:teledesk/src/feature/chats/data/conversation_repository.dart';
+import 'package:teledesk/src/feature/chats/data/chats_repository.dart';
 import 'package:teledesk/src/feature/chats/model/conversation.dart';
 
 part 'chats_controller.freezed.dart';
@@ -12,17 +12,19 @@ sealed class ChatsState with _$ChatsState {
     @Default([]) List<Conversation> openConversations,
     @Default([]) List<Conversation> myConversations,
   }) = Chats$IdleState;
+
   const factory ChatsState.loading() = Chats$LoadingState;
+
   const factory ChatsState.error(String message) = Chats$ErrorState;
 }
 
 final class ChatsController extends StateController<ChatsState> with SequentialControllerHandler {
-  ChatsController({required IConversationRepository repository, required int workerId})
+  ChatsController({required IChatsRepository repository, required int workerId})
     : _repository = repository,
       _workerId = workerId,
       super(initialState: const ChatsState.loading());
 
-  final IConversationRepository _repository;
+  final IChatsRepository _repository;
   final int _workerId;
   StreamSubscription<List<Conversation>>? _openSub;
   StreamSubscription<List<Conversation>>? _mineSub;

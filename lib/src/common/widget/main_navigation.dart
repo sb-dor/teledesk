@@ -4,6 +4,7 @@ import 'package:teledesk/src/common/router/routes.dart';
 import 'package:teledesk/src/common/util/screen_util.dart';
 import 'package:teledesk/src/feature/authentication/widget/authentication_scope.dart';
 import 'package:teledesk/src/feature/chats/controller/chats_controller.dart';
+import 'package:teledesk/src/feature/chats/data/chats_repository.dart';
 import 'package:teledesk/src/feature/initialization/models/dependencies.dart';
 
 /// Wraps a screen with a navigation rail (desktop/tablet) or bottom nav bar
@@ -51,10 +52,10 @@ class _MainNavigationState extends State<MainNavigation> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      final deps = Dependencies.of(context);
+      final dependencies = Dependencies.of(context);
       final worker = AuthenticationScope.identityOf(context, listen: false);
       _chatsController = ChatsController(
-        repository: deps.conversationRepository,
+        repository: ChatsRepositoryImpl(database: dependencies.database),
         workerId: worker?.id ?? 0,
       )..initialize();
       _chatsController!.addListener(_onChatsChanged);
@@ -144,31 +145,23 @@ class _MainNavigationState extends State<MainNavigation> {
 
   Widget _buildMobile(BuildContext context) {
     return Scaffold(
-      body: Column(
-        children: [
-          Expanded(child: widget.child),
-          NavigationBar(
-            selectedIndex: _selectedIndex,
-            onDestinationSelected: (i) => _navigateTo(_destinations[i].route),
-            destinations: _destinations.map((d) {
-              final showBadge = d.route == Routes.chats && _openCount > 0;
-              return NavigationDestination(
-                icon: Badge(
-                  isLabelVisible: showBadge,
-                  label: Text('$_openCount'),
-                  child: Icon(d.icon),
-                ),
-                selectedIcon: Badge(
-                  isLabelVisible: showBadge,
-                  label: Text('$_openCount'),
-                  child: Icon(d.selectedIcon),
-                ),
-                label: d.label,
-              );
-            }).toList(),
-          ),
-        ],
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: _selectedIndex,
+        onDestinationSelected: (i) => _navigateTo(_destinations[i].route),
+        destinations: _destinations.map((d) {
+          final showBadge = d.route == Routes.chats && _openCount > 0;
+          return NavigationDestination(
+            icon: Badge(isLabelVisible: showBadge, label: Text('$_openCount'), child: Icon(d.icon)),
+            selectedIcon: Badge(
+              isLabelVisible: showBadge,
+              label: Text('$_openCount'),
+              child: Icon(d.selectedIcon),
+            ),
+            label: d.label,
+          );
+        }).toList(),
       ),
+      body: widget.child,
     );
   }
 }
