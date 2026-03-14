@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:teledesk/src/common/util/screen_util.dart';
 import 'package:teledesk/src/feature/authentication/widget/authentication_scope.dart';
@@ -10,7 +8,7 @@ import 'package:teledesk/src/feature/conversation/widget/desktop/conversation_de
 import 'package:teledesk/src/feature/conversation/widget/mobile/conversation_mobile_widget.dart';
 import 'package:teledesk/src/feature/initialization/models/dependencies.dart';
 import 'package:teledesk/src/feature/quick_replies/data/quick_reply_repository.dart';
-import 'package:teledesk/src/feature/quick_replies/model/quick_reply.dart';
+import 'package:teledesk/src/feature/workers/data/worker_repository.dart';
 
 class ConversationInhWidget extends InheritedWidget {
   const ConversationInhWidget({super.key, required this.state, required super.child});
@@ -39,12 +37,9 @@ class ConversationConfigWidget extends StatefulWidget {
 class ConversationConfigWidgetState extends State<ConversationConfigWidget> {
   ConversationController? _conversationController;
   ConversationDataController? _conversationDataController;
-  List<QuickReply> quickReplies = [];
-  StreamSubscription<List<QuickReply>>? _quickRepliesSub;
   bool _initialized = false;
 
   ConversationController get conversationController => _conversationController!;
-
   ConversationDataController get conversationDataController => _conversationDataController!;
 
   @override
@@ -62,20 +57,15 @@ class ConversationConfigWidgetState extends State<ConversationConfigWidget> {
     _conversationController = ConversationController(
       repository: ConversationRepositoryImpl(database: dependencies.database),
       telegram: dependencies.telegramRepository,
+      quickReplyRepository: QuickReplyRepositoryImpl(database: dependencies.database),
+      workerRepository: WorkerRepositoryImpl(database: dependencies.database),
       conversationId: widget.conversationId,
       currentWorkerId: AuthenticationScope.identityOf(context, listen: false)?.id ?? 0,
     )..initialize();
-
-    _quickRepliesSub = QuickReplyRepositoryImpl(database: dependencies.database).watchAll().listen((
-      replies,
-    ) {
-      if (mounted) setState(() => quickReplies = replies);
-    });
   }
 
   @override
   void dispose() {
-    _quickRepliesSub?.cancel();
     conversationController.dispose();
     conversationDataController.dispose();
     super.dispose();

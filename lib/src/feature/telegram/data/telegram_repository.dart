@@ -77,6 +77,9 @@ abstract interface class ITelegramRepository {
   /// Get file download URL
   Future<String?> getFileUrl({required String fileId});
 
+  /// Update the bot token at runtime (called after user saves new token)
+  void updateToken(String newToken);
+
   Future<Conversation?> findByTelegramUserId(int telegramUserId);
 
   Future<Conversation> createOrGetConversation({
@@ -100,15 +103,20 @@ abstract interface class ITelegramRepository {
 }
 
 final class TelegramRepositoryImpl implements ITelegramRepository {
-  TelegramRepositoryImpl({required String botToken, required final AppDatabase appDatabase})
+  TelegramRepositoryImpl({required String? botToken, required final AppDatabase appDatabase})
     : _baseUrl = 'https://api.telegram.org/bot$botToken',
       _fileBaseUrl = 'https://api.telegram.org/file/bot$botToken',
       _db = appDatabase;
 
-  final String _baseUrl;
-  final String _fileBaseUrl;
+  String _baseUrl;
+  String _fileBaseUrl;
   final http.Client _client = http.Client();
   final AppDatabase _db;
+
+  void updateToken(String newToken) {
+    _baseUrl = 'https://api.telegram.org/bot$newToken';
+    _fileBaseUrl = 'https://api.telegram.org/file/bot$newToken';
+  }
 
   Conversation _rowToConversation(ConversationsTblData row) => Conversation(
     id: row.id,

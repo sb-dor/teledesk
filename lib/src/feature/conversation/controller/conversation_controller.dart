@@ -2,10 +2,14 @@ import 'dart:async';
 import 'dart:typed_data';
 import 'package:control/control.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:teledesk/src/feature/authentication/model/identity.dart';
 import 'package:teledesk/src/feature/chats/model/chat_message.dart';
 import 'package:teledesk/src/feature/chats/model/conversation.dart';
 import 'package:teledesk/src/feature/conversation/data/conversation_repository.dart';
+import 'package:teledesk/src/feature/quick_replies/data/quick_reply_repository.dart';
+import 'package:teledesk/src/feature/quick_replies/model/quick_reply.dart';
 import 'package:teledesk/src/feature/telegram/data/telegram_repository.dart';
+import 'package:teledesk/src/feature/workers/data/worker_repository.dart';
 
 part 'conversation_controller.freezed.dart';
 
@@ -27,28 +31,44 @@ final class ConversationController extends StateController<ConversationState>
   ConversationController({
     required IConversationRepository repository,
     required ITelegramRepository telegram,
+    required IQuickReplyRepository quickReplyRepository,
+    required IWorkerRepository workerRepository,
     required int conversationId,
     required int currentWorkerId,
   }) : _repository = repository,
        _telegram = telegram,
+       _quickReplyRepository = quickReplyRepository,
+       _workerRepository = workerRepository,
        _conversationId = conversationId,
        _workerId = currentWorkerId,
        super(initialState: const ConversationState.loading());
 
   final IConversationRepository _repository;
   final ITelegramRepository _telegram;
+  final IQuickReplyRepository _quickReplyRepository;
+  final IWorkerRepository _workerRepository;
   final int _conversationId;
   final int _workerId;
-  StreamSubscription<List<Conversation>>? _conversationSub;
+
+  StreamSubscription<Conversation?>? _conversationSub;
   StreamSubscription<List<ChatMessage>>? _chatMessagesSub;
+  StreamSubscription<List<QuickReply>>? _quickRepliesSub;
+
+  List<QuickReply> _quickReplies = [];
+  List<Worker> _workers = [];
+  bool _isSending = false;
+
+  List<QuickReply> get quickReplies => _quickReplies;
+  List<Worker> get workers => _workers;
+  bool get isSending => _isSending;
 
   void initialize() => handle(() async {
-    // Initial load
-    final conversations = await _repository.watchConversations().first;
-    final conv = conversations.where((c) => c.id == _conversationId).firstOrNull;
+    _workers = await _workerRepository.getWorkers();
+    notifyListeners();
+
+    final conv = await _repository.watchConversation(_conversationId).first;
     if (conv != null) {
       setState(ConversationState.idle(conv, List.empty()));
-      // Auto-assign if open
       if (conv.status == ConversationStatus.open) {
         await _repository.assignConversation(_conversationId, _workerId);
         await _repository.markMessagesRead(_conversationId);
@@ -58,9 +78,7 @@ final class ConversationController extends StateController<ConversationState>
       }
     }
 
-    // Watch for live changes
-    _conversationSub = _repository.watchConversations().listen((conversations) {
-      final updated = conversations.where((c) => c.id == _conversationId).firstOrNull;
+    _conversationSub = _repository.watchConversation(_conversationId).listen((updated) {
       if (updated != null) {
         final current = state;
         if (current is Conversation$IdleState) {
@@ -75,14 +93,22 @@ final class ConversationController extends StateController<ConversationState>
         setState(ConversationState.idle(current.conversation, messages));
       }
     });
+
+    _quickRepliesSub = _quickReplyRepository.watchAll().listen((replies) {
+      _quickReplies = replies;
+      notifyListeners();
+    });
   });
+
+  Future<String?> getPhotoUrl(String fileId) => _telegram.getFileUrl(fileId: fileId);
 
   void sendText(String text) => handle(
     () async {
       final current = state;
       if (current is! Conversation$IdleState) return;
       final conv = current.conversation;
-      setState(const ConversationState.sending());
+      _isSending = true;
+      notifyListeners();
       await _telegram.sendMessage(chatId: conv.telegramUserId, text: text);
       await _repository.saveOutgoingMessage(
         conversationId: _conversationId,
@@ -92,13 +118,15 @@ final class ConversationController extends StateController<ConversationState>
         sentAt: DateTime.now(),
       );
       await _repository.updateLastMessage(_conversationId, text, DateTime.now());
-      setState(ConversationState.idle(conv, current.messages));
+      _isSending = false;
+      notifyListeners();
     },
     error: (e, st) async {
-      final conv = state as Conversation$IdleState?;
-      if (conv != null) {
-        setState(ConversationState.error(e.toString(), conv.conversation));
-        setState(ConversationState.idle(conv.conversation, conv.messages));
+      _isSending = false;
+      final current = state;
+      if (current is Conversation$IdleState) {
+        setState(ConversationState.error(e.toString(), current.conversation));
+        setState(ConversationState.idle(current.conversation, current.messages));
       }
     },
   );
@@ -108,7 +136,8 @@ final class ConversationController extends StateController<ConversationState>
       final current = state;
       if (current is! Conversation$IdleState) return;
       final conv = current.conversation;
-      setState(const ConversationState.sending());
+      _isSending = true;
+      notifyListeners();
       final fileId = await _telegram.sendPhoto(
         chatId: conv.telegramUserId,
         photoBytes: bytes,
@@ -124,13 +153,12 @@ final class ConversationController extends StateController<ConversationState>
         sentByWorkerId: _workerId,
         sentAt: DateTime.now(),
       );
-      setState(ConversationState.idle(conv, current.messages));
+      _isSending = false;
+      notifyListeners();
     },
     error: (e, st) async {
-      final idleState = state as Conversation$IdleState?;
-      if (idleState?.conversation != null) {
-        setState(ConversationState.idle(idleState!.conversation, idleState.messages));
-      }
+      _isSending = false;
+      notifyListeners();
     },
   );
 
@@ -139,7 +167,8 @@ final class ConversationController extends StateController<ConversationState>
       final current = state;
       if (current is! Conversation$IdleState) return;
       final conv = current.conversation;
-      setState(const ConversationState.sending());
+      _isSending = true;
+      notifyListeners();
       await _telegram.sendDocument(
         chatId: conv.telegramUserId,
         fileBytes: bytes,
@@ -154,11 +183,12 @@ final class ConversationController extends StateController<ConversationState>
         sentByWorkerId: _workerId,
         sentAt: DateTime.now(),
       );
-      setState(ConversationState.idle(conv, current.messages));
+      _isSending = false;
+      notifyListeners();
     },
     error: (e, st) async {
-      final conv = state as Conversation$IdleState?;
-      if (conv != null) setState(ConversationState.idle(conv.conversation, conv.messages));
+      _isSending = false;
+      notifyListeners();
     },
   );
 
@@ -204,6 +234,7 @@ final class ConversationController extends StateController<ConversationState>
   void dispose() {
     _conversationSub?.cancel();
     _chatMessagesSub?.cancel();
+    _quickRepliesSub?.cancel();
     super.dispose();
   }
 }

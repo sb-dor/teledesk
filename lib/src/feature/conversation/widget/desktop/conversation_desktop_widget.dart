@@ -10,8 +10,8 @@ import 'package:teledesk/src/feature/chats/model/chat_message.dart';
 import 'package:teledesk/src/feature/chats/model/conversation.dart';
 import 'package:teledesk/src/feature/conversation/controller/conversation_controller.dart';
 import 'package:teledesk/src/feature/conversation/widget/conversation_config_widget.dart';
-import 'package:teledesk/src/feature/initialization/models/dependencies.dart';
 import 'package:teledesk/src/feature/quick_replies/model/quick_reply.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class ConversationDesktopWidget extends StatefulWidget {
   const ConversationDesktopWidget({super.key});
@@ -24,22 +24,7 @@ class _ConversationDesktopWidgetState extends State<ConversationDesktopWidget> {
   final ScrollController _scrollController = ScrollController();
   final TextEditingController _textController = TextEditingController();
   final FocusNode _focusNode = FocusNode();
-  final List<Worker> _allWorkers = [];
   Timer? _typingTimer;
-
-  @override
-  void initState() {
-    super.initState();
-    // _loadWorkers();
-  }
-
-  // Future<void> _loadWorkers() async {
-  //   final deps = Dependencies.of(context);
-  //   try {
-  //     final workers = await deps.workerRepository.getWorkers();
-  //     if (mounted) setState(() => _allWorkers = workers);
-  //   } catch (_) {}
-  // }
 
   @override
   void dispose() {
@@ -97,7 +82,8 @@ class _ConversationDesktopWidgetState extends State<ConversationDesktopWidget> {
     ConversationConfigWidgetState scope,
     int currentWorkerId,
   ) {
-    final otherWorkers = _allWorkers.where((w) => w.id != currentWorkerId).toList();
+    final otherWorkers =
+        scope.conversationController.workers.where((w) => w.id != currentWorkerId).toList();
     showDialog<void>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -151,13 +137,12 @@ class _ConversationDesktopWidgetState extends State<ConversationDesktopWidget> {
     final ctrl = scope.conversationController;
     final dataCtrl = scope.conversationDataController;
     final currentWorker = AuthenticationScope.identityOf(context);
-    final deps = Dependencies.of(context);
 
     return ListenableBuilder(
       listenable: Listenable.merge([ctrl, dataCtrl]),
       builder: (context, _) {
         final state = ctrl.state;
-        final isSending = state is Conversation$SendingState;
+        final isSending = ctrl.isSending;
 
         Conversation? conversation;
         var chatMessages = <ChatMessage>[];
@@ -274,7 +259,7 @@ class _ConversationDesktopWidgetState extends State<ConversationDesktopWidget> {
                         messages: chatMessages,
                         scrollController: _scrollController,
                         currentWorkerId: currentWorker?.id ?? 0,
-                        allWorkers: _allWorkers,
+                        allWorkers: ctrl.workers,
                       ),
               ),
 
@@ -299,7 +284,7 @@ class _ConversationDesktopWidgetState extends State<ConversationDesktopWidget> {
                 isSending: isSending,
                 isFinished: conversation?.status == ConversationStatus.finished,
                 onTextChanged: (text) {
-                  dataCtrl.setMessageText(text, scope.quickReplies);
+                  dataCtrl.setMessageText(text, ctrl.quickReplies);
                   // Send typing action debounced
                   _typingTimer?.cancel();
                   if (text.isNotEmpty && !dataCtrl.isNoteMode) {
@@ -456,13 +441,19 @@ class _MessageBubble extends StatelessWidget {
 
     // Internal note
     if (message.isNote) {
+      final isDark = theme.brightness == Brightness.dark;
+      final noteBg = isDark ? const Color(0xFF2A1F00) : const Color(0xFFFFF8E1);
+      final noteBorder = isDark ? Colors.amber.shade900 : Colors.amber.shade300;
+      final noteAccent = isDark ? Colors.amber.shade300 : Colors.amber.shade800;
+      final noteText = isDark ? Colors.amber.shade200 : Colors.amber.shade900;
+
       return Padding(
         padding: const EdgeInsets.symmetric(vertical: 4),
         child: Container(
           decoration: BoxDecoration(
-            color: const Color(0xFFFFF8E1),
+            color: noteBg,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.amber.shade300),
+            border: Border.all(color: noteBorder),
           ),
           padding: const EdgeInsets.all(12),
           child: Column(
@@ -470,31 +461,31 @@ class _MessageBubble extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  const Icon(Icons.lock_rounded, size: 14, color: Colors.amber),
+                  Icon(Icons.lock_rounded, size: 14, color: noteAccent),
                   const SizedBox(width: 6),
                   Text(
                     'Internal Note',
                     style: theme.textTheme.labelSmall?.copyWith(
-                      color: Colors.amber.shade800,
+                      color: noteAccent,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
                   const SizedBox(width: 6),
                   Text(
                     '· ${_workerName(message.sentByWorkerId)}',
-                    style: theme.textTheme.labelSmall?.copyWith(color: Colors.amber.shade700),
+                    style: theme.textTheme.labelSmall?.copyWith(color: noteAccent),
                   ),
                   const Spacer(),
                   Text(
                     DateFormat.Hm().format(message.sentAt),
-                    style: theme.textTheme.labelSmall?.copyWith(color: Colors.amber.shade700),
+                    style: theme.textTheme.labelSmall?.copyWith(color: noteAccent),
                   ),
                 ],
               ),
               const SizedBox(height: 8),
               Text(
                 message.text ?? '',
-                style: theme.textTheme.bodyMedium?.copyWith(color: Colors.amber.shade900),
+                style: theme.textTheme.bodyMedium?.copyWith(color: noteText),
               ),
             ],
           ),
@@ -602,19 +593,26 @@ class _MessageContent extends StatelessWidget {
               ),
           ],
         );
+      // GIF is displayed like a photo (Telegram stores them as downloadable files)
+      case MessageType.gif:
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _PhotoBubble(fileId: message.fileId, textColor: textColor),
+            if (message.text != null && message.text!.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Text(message.text!, style: TextStyle(color: textColor)),
+              ),
+          ],
+        );
       case MessageType.video:
         return _MediaTile(
           icon: Icons.videocam_rounded,
           label: message.fileName ?? 'Video',
           textColor: textColor,
           caption: message.text,
-        );
-      case MessageType.gif:
-        return _MediaTile(
-          icon: Icons.gif_rounded,
-          label: 'GIF',
-          textColor: textColor,
-          caption: message.text,
+          fileId: message.fileId,
         );
       case MessageType.sticker:
         return _MediaTile(
@@ -622,6 +620,7 @@ class _MessageContent extends StatelessWidget {
           label: 'Sticker',
           textColor: textColor,
           caption: null,
+          fileId: message.fileId,
         );
       case MessageType.document:
         return _MediaTile(
@@ -629,6 +628,7 @@ class _MessageContent extends StatelessWidget {
           label: message.fileName ?? 'Document',
           textColor: textColor,
           caption: message.text,
+          fileId: message.fileId,
         );
       case MessageType.voice:
         return _MediaTile(
@@ -636,6 +636,7 @@ class _MessageContent extends StatelessWidget {
           label: 'Voice message',
           textColor: textColor,
           caption: null,
+          fileId: message.fileId,
         );
       case MessageType.videoNote:
         return _MediaTile(
@@ -643,6 +644,7 @@ class _MessageContent extends StatelessWidget {
           label: 'Video note',
           textColor: textColor,
           caption: null,
+          fileId: message.fileId,
         );
       case MessageType.audio:
         return _MediaTile(
@@ -650,6 +652,7 @@ class _MessageContent extends StatelessWidget {
           label: message.fileName ?? 'Audio',
           textColor: textColor,
           caption: message.text,
+          fileId: message.fileId,
         );
       case MessageType.note:
         return Text(message.text ?? '', style: TextStyle(color: textColor));
@@ -668,32 +671,68 @@ class _MediaTile extends StatelessWidget {
     required this.label,
     required this.textColor,
     required this.caption,
+    this.fileId,
   });
 
   final IconData icon;
   final String label;
   final Color textColor;
   final String? caption;
+  final String? fileId;
+
+  Future<void> _open(BuildContext context) async {
+    if (fileId == null) return;
+    final ctrl = ConversationInhWidget.of(context).conversationController;
+    final url = await ctrl.getPhotoUrl(fileId!);
+    if (url != null && context.mounted) {
+      await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    final hasFile = fileId != null;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: 18, color: textColor.withValues(alpha: 0.8)),
-            const SizedBox(width: 6),
-            Flexible(
-              child: Text(
-                label,
-                style: TextStyle(color: textColor, fontStyle: FontStyle.italic),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
+        GestureDetector(
+          onTap: hasFile ? () => _open(context) : null,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+            decoration: BoxDecoration(
+              color: textColor.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(8),
+              border: hasFile
+                  ? Border.all(color: textColor.withValues(alpha: 0.3), width: 0.5)
+                  : null,
             ),
-          ],
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(icon, size: 18, color: textColor.withValues(alpha: 0.9)),
+                const SizedBox(width: 8),
+                Flexible(
+                  child: Text(
+                    label,
+                    style: TextStyle(
+                      color: textColor,
+                      fontStyle: FontStyle.italic,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                if (hasFile) ...[
+                  const SizedBox(width: 8),
+                  Icon(
+                    Icons.open_in_new_rounded,
+                    size: 14,
+                    color: textColor.withValues(alpha: 0.7),
+                  ),
+                ],
+              ],
+            ),
+          ),
         ),
         if (caption != null && caption!.isNotEmpty)
           Padding(
@@ -722,8 +761,8 @@ class _PhotoBubbleState extends State<_PhotoBubble> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     if (widget.fileId != null && _urlFuture == null) {
-      final repo = Dependencies.of(context).telegramRepository;
-      _urlFuture = repo.getFileUrl(fileId: widget.fileId!);
+      final ctrl = ConversationInhWidget.of(context).conversationController;
+      _urlFuture = ctrl.getPhotoUrl(widget.fileId!);
     }
   }
 
@@ -740,18 +779,54 @@ class _PhotoBubbleState extends State<_PhotoBubble> {
         }
         final url = snapshot.data;
         if (url == null) return _placeholder();
-        return ClipRRect(
-          borderRadius: BorderRadius.circular(8),
-          child: Image.network(
-            url,
-            width: 220,
-            fit: BoxFit.cover,
-            loadingBuilder: (_, child, progress) =>
-                progress == null ? child : _placeholder(loading: true),
-            errorBuilder: (_, __, ___) => _placeholder(),
+        return GestureDetector(
+          onTap: () => _showFullScreen(ctx, url),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: Image.network(
+              url,
+              width: 220,
+              fit: BoxFit.cover,
+              loadingBuilder: (_, child, progress) =>
+                  progress == null ? child : _placeholder(loading: true),
+              errorBuilder: (_, __, ___) => _placeholder(),
+            ),
           ),
         );
       },
+    );
+  }
+
+  void _showFullScreen(BuildContext context, String url) {
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => Dialog.fullscreen(
+        child: Stack(
+          children: [
+            InteractiveViewer(
+              minScale: 0.5,
+              maxScale: 4,
+              child: Center(
+                child: Image.network(url, fit: BoxFit.contain),
+              ),
+            ),
+            Positioned(
+              top: 12,
+              right: 12,
+              child: SafeArea(
+                child: IconButton.filled(
+                  icon: const Icon(Icons.close_rounded),
+                  style: IconButton.styleFrom(
+                    backgroundColor: Colors.black54,
+                    foregroundColor: Colors.white,
+                  ),
+                  onPressed: () => Navigator.of(ctx).pop(),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -868,16 +943,54 @@ class _MessageInputBar extends StatelessWidget {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    final bgColor = isNoteMode ? const Color(0xFFFFF8E1) : colorScheme.surfaceContainerLow;
+    final isDark = theme.brightness == Brightness.dark;
+    final bgColor = isNoteMode
+        ? (isDark ? const Color(0xFF2A1F00) : const Color(0xFFFFF8E1))
+        : colorScheme.surfaceContainerLow;
 
     if (isFinished) {
       return Container(
-        padding: const EdgeInsets.all(16),
-        color: colorScheme.surfaceContainerLow,
-        child: Center(
-          child: Text(
-            'This conversation is closed',
-            style: theme.textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant),
+        decoration: BoxDecoration(
+          color: colorScheme.surfaceContainerLow,
+          border: Border(top: BorderSide(color: colorScheme.outlineVariant, width: 0.5)),
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        child: SafeArea(
+          top: false,
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: colorScheme.surfaceContainerHighest,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(Icons.lock_rounded, size: 18, color: colorScheme.onSurfaceVariant),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'Conversation Closed',
+                      style: theme.textTheme.labelLarge?.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: colorScheme.onSurface,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      'This conversation is read-only. No new messages can be sent.',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
         ),
       );
@@ -896,11 +1009,17 @@ class _MessageInputBar extends StatelessWidget {
                 padding: const EdgeInsets.only(bottom: 4),
                 child: Row(
                   children: [
-                    const Icon(Icons.lock_rounded, size: 14, color: Colors.amber),
+                    Icon(
+                      Icons.lock_rounded,
+                      size: 14,
+                      color: isDark ? Colors.amber.shade300 : Colors.amber,
+                    ),
                     const SizedBox(width: 4),
                     Text(
                       'Internal Note — not visible to user',
-                      style: theme.textTheme.labelSmall?.copyWith(color: Colors.amber.shade800),
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: isDark ? Colors.amber.shade300 : Colors.amber.shade800,
+                      ),
                     ),
                   ],
                 ),
@@ -940,7 +1059,9 @@ class _MessageInputBar extends StatelessWidget {
                         borderSide: BorderSide.none,
                       ),
                       filled: true,
-                      fillColor: isNoteMode ? Colors.amber.shade50 : colorScheme.surface,
+                      fillColor: isNoteMode
+                          ? (isDark ? const Color(0xFF3D2D00) : Colors.amber.shade50)
+                          : colorScheme.surface,
                       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                     ),
                     onChanged: onTextChanged,

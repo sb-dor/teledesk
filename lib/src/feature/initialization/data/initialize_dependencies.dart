@@ -78,8 +78,16 @@ final Map<String, _InitializationStep> _initializationSteps = <String, _Initiali
   'Connect to database': (dependencies) => dependencies.database = Config.inMemoryDatabase
       ? AppDatabase.defaults(name: 'memory')
       : AppDatabase.defaults(name: 'teledesk_db'),
-  'Initialize Telegram repository': (dependencies) => dependencies.telegramRepository =
-      TelegramRepositoryImpl(botToken: Config.telegramBotToken, appDatabase: dependencies.database),
+  'Initialize Telegram repository': (dependencies) async {
+    final row = await (dependencies.database.select(
+      dependencies.database.botSettingsTbl,
+    )..where((t) => t.key.equals('bot_token'))).getSingleOrNull();
+    final token = row?.value;
+    dependencies.telegramRepository = TelegramRepositoryImpl(
+      botToken: token,
+      appDatabase: dependencies.database,
+    );
+  },
   'Initialize BotSettings repository': (dependencies) =>
       dependencies.botSettingsRepository = BotSettingsRepositoryImpl(
         database: dependencies.database,

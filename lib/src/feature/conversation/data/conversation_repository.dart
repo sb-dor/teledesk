@@ -6,6 +6,8 @@ import 'package:teledesk/src/feature/chats/model/conversation.dart';
 abstract interface class IConversationRepository {
   Stream<List<Conversation>> watchConversations();
 
+  Stream<Conversation?> watchConversation(int id);
+
   Future<ChatMessage> saveOutgoingMessage({
     required int conversationId,
     required String messageType,
@@ -97,6 +99,12 @@ final class ConversationRepositoryImpl implements IConversationRepository {
             ..orderBy([(t) => OrderingTerm.desc(t.lastMessageAt)]))
           .watch()
           .map((rows) => rows.map(_rowToConversation).toList());
+
+  @override
+  Stream<Conversation?> watchConversation(int id) =>
+      (_db.select(_db.conversationsTbl)..where((t) => t.id.equals(id)))
+          .watchSingleOrNull()
+          .map((row) => row != null ? _rowToConversation(row) : null);
 
   @override
   Future<ChatMessage> saveOutgoingMessage({

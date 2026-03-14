@@ -55,7 +55,9 @@ class _ChatsMobileWidgetState extends State<ChatsMobileWidget> {
         }
 
         final openCount = chatsState is Chats$IdleState ? chatsState.openConversations.length : 0;
-        final mineCount = chatsState is Chats$IdleState ? chatsState.myConversations.length : 0;
+        final mineUnreadCount = chatsState is Chats$IdleState
+            ? chatsState.myConversations.where((c) => c.hasUnread).length
+            : 0;
 
         return Scaffold(
           appBar: AppBar(
@@ -110,7 +112,7 @@ class _ChatsMobileWidgetState extends State<ChatsMobileWidget> {
                     Expanded(
                       child: _MobileTabButton(
                         label: 'Mine',
-                        count: mineCount,
+                        count: mineUnreadCount,
                         selected: tab == ChatsTab.mine,
                         onTap: () => dataController.selectTab(ChatsTab.mine),
                       ),

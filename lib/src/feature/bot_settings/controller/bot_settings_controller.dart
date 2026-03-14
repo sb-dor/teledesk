@@ -14,9 +14,13 @@ sealed class BotSettingsState with _$BotSettingsState {
     String? description,
     String? botUsername,
   }) = BotSettings$IdleState;
+
   const factory BotSettingsState.loading() = BotSettings$LoadingState;
+
   const factory BotSettingsState.saving() = BotSettings$SavingState;
+
   const factory BotSettingsState.error(String message) = BotSettings$ErrorState;
+
   const factory BotSettingsState.saved() = BotSettings$SavedState;
 }
 
@@ -76,5 +80,12 @@ final class BotSettingsController extends StateController<BotSettingsState>
     await _repository.setDescription(desc);
     await _repository.setShortDescription(shortDesc);
     setState(const BotSettingsState.saved());
+  }, error: (e, st) async => setState(BotSettingsState.error(e.toString())));
+
+  void saveBotToken(String token) => handle(() async {
+    setState(const BotSettingsState.saving());
+    final info = await _repository.saveBotToken(token);
+    setState(BotSettingsState.idle(botUsername: info['username'] as String?));
+    load();
   }, error: (e, st) async => setState(BotSettingsState.error(e.toString())));
 }

@@ -4,16 +4,30 @@ import 'package:teledesk/src/feature/telegram/data/telegram_repository.dart';
 
 abstract interface class IBotSettingsRepository {
   Future<List<BotCommand>> getCommands();
+
   Future<void> setCommands(List<BotCommand> commands);
+
   Future<String?> getSetting(String key);
+
   Future<void> saveSetting(String key, String value);
+
   Future<Map<String, dynamic>> getBotInfo();
+
   Future<void> setDescription(String description);
+
   Future<void> setShortDescription(String shortDescription);
+
   Future<void> setWelcomeMessage(String message);
+
   Future<String?> getWelcomeMessage();
+
   Future<void> setAutoReplyMessage(String message);
+
   Future<String?> getAutoReplyMessage();
+
+  Future<String?> getStoredBotToken();
+
+  Future<Map<String, dynamic>> saveBotToken(String token);
 }
 
 final class BotSettingsRepositoryImpl implements IBotSettingsRepository {
@@ -91,4 +105,16 @@ final class BotSettingsRepositoryImpl implements IBotSettingsRepository {
 
   @override
   Future<String?> getAutoReplyMessage() => getSetting('auto_reply');
+
+  @override
+  Future<String?> getStoredBotToken() => getSetting('bot_token');
+
+  @override
+  Future<Map<String, dynamic>> saveBotToken(String token) async {
+    // Validate by calling getMe before saving
+    _telegram.updateToken(token);
+    final info = await _telegram.getMe(); // throws if invalid
+    await saveSetting('bot_token', token);
+    return info;
+  }
 }
