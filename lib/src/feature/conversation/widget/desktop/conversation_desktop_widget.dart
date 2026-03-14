@@ -160,8 +160,11 @@ class _ConversationDesktopWidgetState extends State<ConversationDesktopWidget> {
         final isSending = state is Conversation$SendingState;
 
         Conversation? conversation;
+        var chatMessages = <ChatMessage>[];
         if (state is Conversation$IdleState) {
           conversation = state.conversation;
+          _scrollToBottom();
+          chatMessages.addAll(state.messages);
         } else if (state is Conversation$ErrorState) {
           conversation = state.conversation;
         }
@@ -264,25 +267,16 @@ class _ConversationDesktopWidgetState extends State<ConversationDesktopWidget> {
                 ),
 
               // Message list
-              // Expanded(
-              //   child: state is Conversation$LoadingState
-              //       ? const Center(child: CircularProgressIndicator())
-              //       : StreamBuilder<List<ChatMessage>>(
-              //           stream: deps.messageRepository.watchMessages(scope.widget.conversationId),
-              //           builder: (ctx, snapshot) {
-              //             final messages = snapshot.data ?? [];
-              //             if (messages.isNotEmpty) {
-              //               _scrollToBottom();
-              //             }
-              //             return _MessageList(
-              //               messages: messages,
-              //               scrollController: _scrollController,
-              //               currentWorkerId: currentWorker?.id ?? 0,
-              //               allWorkers: _allWorkers,
-              //             );
-              //           },
-              //         ),
-              // ),
+              Expanded(
+                child: state is Conversation$LoadingState
+                    ? const Center(child: CircularProgressIndicator())
+                    : _MessageList(
+                        messages: chatMessages,
+                        scrollController: _scrollController,
+                        currentWorkerId: currentWorker?.id ?? 0,
+                        allWorkers: _allWorkers,
+                      ),
+              ),
 
               // Quick replies popup
               if (dataCtrl.showQuickReplies)

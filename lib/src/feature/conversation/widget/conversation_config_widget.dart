@@ -39,7 +39,6 @@ class ConversationConfigWidget extends StatefulWidget {
 class ConversationConfigWidgetState extends State<ConversationConfigWidget> {
   ConversationController? _conversationController;
   ConversationDataController? _conversationDataController;
-  IQuickReplyRepository? _quickReplyRepository;
   List<QuickReply> quickReplies = [];
   StreamSubscription<List<QuickReply>>? _quickRepliesSub;
   bool _initialized = false;
@@ -47,8 +46,6 @@ class ConversationConfigWidgetState extends State<ConversationConfigWidget> {
   ConversationController get conversationController => _conversationController!;
 
   ConversationDataController get conversationDataController => _conversationDataController!;
-
-  IQuickReplyRepository get quickReplyRepository => _quickReplyRepository!;
 
   @override
   void initState() {
@@ -66,10 +63,12 @@ class ConversationConfigWidgetState extends State<ConversationConfigWidget> {
       repository: ConversationRepositoryImpl(database: dependencies.database),
       telegram: dependencies.telegramRepository,
       conversationId: widget.conversationId,
-      currentWorkerId: AuthenticationScope.identityOf(context)?.id ?? 0,
+      currentWorkerId: AuthenticationScope.identityOf(context, listen: false)?.id ?? 0,
     )..initialize();
 
-    _quickRepliesSub = _quickReplyRepository!.watchAll().listen((replies) {
+    _quickRepliesSub = QuickReplyRepositoryImpl(database: dependencies.database).watchAll().listen((
+      replies,
+    ) {
       if (mounted) setState(() => quickReplies = replies);
     });
   }

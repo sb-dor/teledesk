@@ -11,7 +11,8 @@ part 'conversation_controller.freezed.dart';
 
 @freezed
 sealed class ConversationState with _$ConversationState {
-  const factory ConversationState.idle(Conversation conversation) = Conversation$IdleState;
+  const factory ConversationState.idle(Conversation conversation, List<ChatMessage> messages) =
+      Conversation$IdleState;
 
   const factory ConversationState.loading() = Conversation$LoadingState;
 
@@ -46,7 +47,7 @@ final class ConversationController extends StateController<ConversationState>
     final conversations = await _repository.watchConversations().first;
     final conv = conversations.where((c) => c.id == _conversationId).firstOrNull;
     if (conv != null) {
-      setState(ConversationState.idle(conv));
+      setState(ConversationState.idle(conv, List.empty()));
       // Auto-assign if open
       if (conv.status == ConversationStatus.open) {
         await _repository.assignConversation(_conversationId, _workerId);
@@ -62,13 +63,18 @@ final class ConversationController extends StateController<ConversationState>
       final updated = conversations.where((c) => c.id == _conversationId).firstOrNull;
       if (updated != null) {
         final current = state;
-        if (current is! Conversation$SendingState) {
-          setState(ConversationState.idle(updated));
+        if (current is Conversation$IdleState) {
+          setState(ConversationState.idle(updated, current.messages));
         }
       }
     });
 
-    _chatMessagesSub = _repository.watchMessages(_conversationId).listen((messages) {});
+    _chatMessagesSub = _repository.watchMessages(_conversationId).listen((messages) {
+      final current = state;
+      if (current is Conversation$IdleState) {
+        setState(ConversationState.idle(current.conversation, messages));
+      }
+    });
   });
 
   void sendText(String text) => handle(
@@ -86,12 +92,14 @@ final class ConversationController extends StateController<ConversationState>
         sentAt: DateTime.now(),
       );
       await _repository.updateLastMessage(_conversationId, text, DateTime.now());
-      setState(ConversationState.idle(conv));
+      setState(ConversationState.idle(conv, current.messages));
     },
     error: (e, st) async {
-      final conv = (state as Conversation$IdleState?)?.conversation;
-      setState(ConversationState.error(e.toString(), conv));
-      if (conv != null) setState(ConversationState.idle(conv));
+      final conv = state as Conversation$IdleState?;
+      if (conv != null) {
+        setState(ConversationState.error(e.toString(), conv.conversation));
+        setState(ConversationState.idle(conv.conversation, conv.messages));
+      }
     },
   );
 
@@ -116,11 +124,13 @@ final class ConversationController extends StateController<ConversationState>
         sentByWorkerId: _workerId,
         sentAt: DateTime.now(),
       );
-      setState(ConversationState.idle(conv));
+      setState(ConversationState.idle(conv, current.messages));
     },
     error: (e, st) async {
-      final conv = (state as Conversation$IdleState?)?.conversation;
-      if (conv != null) setState(ConversationState.idle(conv));
+      final idleState = state as Conversation$IdleState?;
+      if (idleState?.conversation != null) {
+        setState(ConversationState.idle(idleState!.conversation, idleState.messages));
+      }
     },
   );
 
@@ -144,11 +154,11 @@ final class ConversationController extends StateController<ConversationState>
         sentByWorkerId: _workerId,
         sentAt: DateTime.now(),
       );
-      setState(ConversationState.idle(conv));
+      setState(ConversationState.idle(conv, current.messages));
     },
     error: (e, st) async {
-      final conv = (state as Conversation$IdleState?)?.conversation;
-      if (conv != null) setState(ConversationState.idle(conv));
+      final conv = state as Conversation$IdleState?;
+      if (conv != null) setState(ConversationState.idle(conv.conversation, conv.messages));
     },
   );
 
@@ -193,6 +203,7 @@ final class ConversationController extends StateController<ConversationState>
   @override
   void dispose() {
     _conversationSub?.cancel();
+    _chatMessagesSub?.cancel();
     super.dispose();
   }
 }
