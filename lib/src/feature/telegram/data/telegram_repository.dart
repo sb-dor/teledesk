@@ -80,6 +80,9 @@ abstract interface class ITelegramRepository {
   /// Update the bot token at runtime (called after user saves new token)
   void updateToken(String newToken);
 
+  /// Clear the bot token — disables all API calls until a new token is set
+  void clearToken();
+
   Future<Conversation?> findByTelegramUserId(int telegramUserId);
 
   Future<Conversation> createOrGetConversation({
@@ -113,9 +116,16 @@ final class TelegramRepositoryImpl implements ITelegramRepository {
   final http.Client _client = http.Client();
   final AppDatabase _db;
 
+  @override
   void updateToken(String newToken) {
     _baseUrl = 'https://api.telegram.org/bot$newToken';
     _fileBaseUrl = 'https://api.telegram.org/file/bot$newToken';
+  }
+
+  @override
+  void clearToken() {
+    _baseUrl = '';
+    _fileBaseUrl = '';
   }
 
   Conversation _rowToConversation(ConversationsTblData row) => Conversation(

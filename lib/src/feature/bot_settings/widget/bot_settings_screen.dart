@@ -30,7 +30,10 @@ class _BotSettingsScreenState extends State<BotSettingsScreen> {
   void initState() {
     super.initState();
     _dependencies = Dependencies.of(context);
-    _controller = BotSettingsController(repository: _dependencies.botSettingsRepository)..load();
+    _controller = BotSettingsController(
+      repository: _dependencies.botSettingsRepository,
+      pollingController: _dependencies.telegramPollingController,
+    )..load();
     _controller.addListener(_onStateChanged);
     _loadStoredToken();
   }

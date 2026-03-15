@@ -28,6 +28,8 @@ abstract interface class IBotSettingsRepository {
   Future<String?> getStoredBotToken();
 
   Future<Map<String, dynamic>> saveBotToken(String token);
+
+  Future<void> deleteBotToken();
 }
 
 final class BotSettingsRepositoryImpl implements IBotSettingsRepository {
@@ -111,10 +113,20 @@ final class BotSettingsRepositoryImpl implements IBotSettingsRepository {
 
   @override
   Future<Map<String, dynamic>> saveBotToken(String token) async {
-    // Validate by calling getMe before saving
     _telegram.updateToken(token);
-    final info = await _telegram.getMe(); // throws if invalid
-    await saveSetting('bot_token', token);
-    return info;
+    try {
+      final info = await _telegram.getMe(); // throws if invalid
+      await saveSetting('bot_token', token);
+      return info;
+    } catch (_) {
+      await deleteBotToken();
+      rethrow;
+    }
+  }
+
+  @override
+  Future<void> deleteBotToken() async {
+    await (_db.delete(_db.botSettingsTbl)..where((t) => t.key.equals('bot_token'))).go();
+    _telegram.clearToken();
   }
 }

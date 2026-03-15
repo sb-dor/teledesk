@@ -2,6 +2,7 @@ import 'package:control/control.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:teledesk/src/feature/bot_settings/data/bot_settings_repository.dart';
 import 'package:teledesk/src/feature/bot_settings/model/bot_command.dart';
+import 'package:teledesk/src/feature/telegram/controller/telegram_polling_controller.dart';
 
 part 'bot_settings_controller.freezed.dart';
 
@@ -26,11 +27,15 @@ sealed class BotSettingsState with _$BotSettingsState {
 
 final class BotSettingsController extends StateController<BotSettingsState>
     with SequentialControllerHandler {
-  BotSettingsController({required IBotSettingsRepository repository})
-    : _repository = repository,
-      super(initialState: const BotSettingsState.loading());
+  BotSettingsController({
+    required IBotSettingsRepository repository,
+    required TelegramPollingController pollingController,
+  }) : _repository = repository,
+       _pollingController = pollingController,
+       super(initialState: const BotSettingsState.loading());
 
   final IBotSettingsRepository _repository;
+  final TelegramPollingController _pollingController;
 
   void load() => handle(() async {
     setState(const BotSettingsState.loading());
@@ -82,10 +87,17 @@ final class BotSettingsController extends StateController<BotSettingsState>
     setState(const BotSettingsState.saved());
   }, error: (e, st) async => setState(BotSettingsState.error(e.toString())));
 
-  void saveBotToken(String token) => handle(() async {
-    setState(const BotSettingsState.saving());
-    final info = await _repository.saveBotToken(token);
-    setState(BotSettingsState.idle(botUsername: info['username'] as String?));
-    load();
-  }, error: (e, st) async => setState(BotSettingsState.error(e.toString())));
+  void saveBotToken(String token) => handle(
+    () async {
+      setState(const BotSettingsState.saving());
+      final info = await _repository.saveBotToken(token);
+      setState(BotSettingsState.idle(botUsername: info['username'] as String?));
+      _pollingController.startPolling();
+      load();
+    },
+    error: (e, st) async {
+      _pollingController.stopPolling();
+      setState(BotSettingsState.error(e.toString()));
+    },
+  );
 }
