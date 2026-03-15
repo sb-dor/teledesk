@@ -3,6 +3,12 @@
 A Flutter-based Telegram bot admin panel for managing customer support conversations. Built with
 clean architecture, Drift (SQLite), and long-polling for real-time message handling.
 
+## Vibe Coded
+
+This project was built through vibe coding — iterative, conversation-driven development using
+[Claude Code](https://claude.ai/claude-code) by Anthropic. Architecture decisions, bug fixes,
+and feature implementations were developed collaboratively between the developer and Claude.
+
 ## Features
 
 - Real-time incoming messages via Telegram long-polling
