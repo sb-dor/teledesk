@@ -3,6 +3,7 @@ import 'package:octopus/octopus.dart';
 import 'package:teledesk/src/common/model/app_metadata.dart';
 import 'package:teledesk/src/common/router/routes.dart';
 import 'package:teledesk/src/common/widget/main_navigation.dart';
+import 'package:teledesk/src/common/widget/scaffold_padding.dart';
 import 'package:teledesk/src/feature/authentication/model/identity.dart';
 import 'package:teledesk/src/feature/authentication/widget/authentication_scope.dart';
 import 'package:teledesk/src/feature/initialization/models/dependencies.dart';
@@ -45,7 +46,7 @@ class _SettingsScaffold extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('Settings')),
       body: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: ScaffoldPadding.of(context),
         children: [
           // Profile card
           Card(
@@ -210,6 +211,42 @@ class _SettingsScaffold extends StatelessWidget {
               AuthenticationScope.controllerOf(context).signOut();
             },
           ),
+          const SizedBox(height: 8),
+
+          // Sign out and disconnect bot
+          OutlinedButton.icon(
+            icon: const Icon(Icons.link_off_rounded),
+            label: const Text('Sign Out & Disconnect Bot'),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: colorScheme.error,
+              side: BorderSide(color: colorScheme.error),
+            ),
+            onPressed: () {
+              showDialog<void>(
+                context: context,
+                builder: (ctx) => AlertDialog(
+                  title: const Text('Disconnect Bot & Sign Out'),
+                  content: const Text(
+                    'This will delete all chats, remove the bot token, and sign you out. The bot will stop responding until a new token is connected.',
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.of(ctx).pop(),
+                      child: const Text('Cancel'),
+                    ),
+                    FilledButton(
+                      style: FilledButton.styleFrom(backgroundColor: colorScheme.error),
+                      onPressed: () {
+                        Navigator.of(ctx).pop();
+                        AuthenticationScope.controllerOf(context).resetAndSignOut();
+                      },
+                      child: const Text('Disconnect & Sign Out'),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
           const SizedBox(height: 16),
         ],
       ),
@@ -219,6 +256,7 @@ class _SettingsScaffold extends StatelessWidget {
 
 class _InfoRow extends StatelessWidget {
   const _InfoRow({required this.label, required this.value});
+
   final String label;
   final String value;
 

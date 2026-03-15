@@ -77,7 +77,7 @@ final Map<String, _InitializationStep> _initializationSteps = <String, _Initiali
       dependencies.sharedPreferences = await SharedPreferences.getInstance(),
   'Connect to database': (dependencies) => dependencies.database = Config.inMemoryDatabase
       ? AppDatabase.defaults(name: 'memory')
-      : AppDatabase.defaults(name: 'teledesk_db'),
+      : AppDatabase.defaults(name: Config.databaseName),
   'Initialize Telegram repository': (dependencies) async {
     final row = await (dependencies.database.select(
       dependencies.database.botSettingsTbl,

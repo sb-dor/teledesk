@@ -463,7 +463,7 @@ final class TelegramRepositoryImpl implements ITelegramRepository {
             status: const Value('open'),
             assignedWorkerId: const Value(null),
             canUserFinish: const Value(false),
-            unreadCount: const Value(1),
+            unreadCount: const Value(0),
             updatedAt: Value(now),
           ),
         );
@@ -471,7 +471,7 @@ final class TelegramRepositoryImpl implements ITelegramRepository {
           status: ConversationStatus.open,
           assignedWorkerId: () => null,
           canUserFinish: false,
-          unreadCount: 1,
+          unreadCount: 0,
         );
       }
       await (_db.update(
@@ -498,7 +498,7 @@ final class TelegramRepositoryImpl implements ITelegramRepository {
             status: const Value('open'),
             assignedWorkerId: const Value(null),
             canUserFinish: const Value(false),
-            unreadCount: const Value(1),
+            unreadCount: const Value(0),
             lastMessageAt: now,
             lastMessagePreview: const Value(null),
             createdAt: now,
@@ -514,7 +514,7 @@ final class TelegramRepositoryImpl implements ITelegramRepository {
       status: ConversationStatus.open,
       assignedWorkerId: null,
       canUserFinish: false,
-      unreadCount: 1,
+      unreadCount: 0,
       lastMessageAt: DateTime.fromMillisecondsSinceEpoch(now * 1000),
       lastMessagePreview: null,
       createdAt: DateTime.fromMillisecondsSinceEpoch(now * 1000),

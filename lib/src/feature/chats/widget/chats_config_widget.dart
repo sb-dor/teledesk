@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:teledesk/src/common/router/routes.dart';
 import 'package:teledesk/src/common/util/screen_util.dart';
+import 'package:teledesk/src/common/widget/main_navigation.dart';
 import 'package:teledesk/src/feature/authentication/widget/authentication_scope.dart';
 import 'package:teledesk/src/feature/chats/controller/chats_controller.dart';
 import 'package:teledesk/src/feature/chats/data/chats_repository.dart';
@@ -31,31 +33,19 @@ class ChatsConfigWidget extends StatefulWidget {
 }
 
 class ChatsConfigWidgetState extends State<ChatsConfigWidget> {
-  ChatsController? _chatsController;
-  ChatsDataController? _chatsDataController;
-  bool _initialized = false;
-
-  ChatsController get chatsController => _chatsController!;
-
-  ChatsDataController get chatsDataController => _chatsDataController!;
+  late ChatsController chatsController;
+  late ChatsDataController chatsDataController;
 
   @override
   void initState() {
     super.initState();
-    _chatsDataController = ChatsDataController();
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    if (_initialized) return;
-    _initialized = true;
     final dependencies = Dependencies.of(context);
-    final worker = AuthenticationScope.identityOf(context);
-    _chatsController = ChatsController(
+    final worker = AuthenticationScope.identityOf(context, listen: false);
+    chatsController = ChatsController(
       repository: ChatsRepositoryImpl(database: dependencies.database),
       workerId: worker?.id ?? 0,
     )..initialize();
+    chatsDataController = ChatsDataController();
   }
 
   @override
@@ -66,11 +56,14 @@ class ChatsConfigWidgetState extends State<ChatsConfigWidget> {
   }
 
   @override
-  Widget build(BuildContext context) => ChatsInhWidget(
-    state: this,
-    child: context.screenSizeMaybeWhen(
-      orElse: () => const ChatsDesktopWidget(),
-      phone: () => const ChatsMobileWidget(),
+  Widget build(BuildContext context) => MainNavigation(
+    currentRoute: Routes.chats,
+    child: ChatsInhWidget(
+      state: this,
+      child: context.screenSizeMaybeWhen(
+        orElse: () => const ChatsDesktopWidget(),
+        phone: () => const ChatsMobileWidget(),
+      ),
     ),
   );
 }

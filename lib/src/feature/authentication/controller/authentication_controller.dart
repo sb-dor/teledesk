@@ -132,8 +132,18 @@ final class AuthenticationController extends StateController<AuthenticationState
     setState(AuthenticationState.authenticated(identity));
   }, error: (e, st) async => setState(AuthenticationState.error(e.toString())));
 
-  /// Sign out
+  /// Sign out — clears all chats but keeps the bot token connected
   void signOut() => handle(() async {
+    final identity = state.identity;
+    if (identity != null) {
+      await _iWorkerStatusManagerRepository.updateStatus(identity.id, IdentityStatus.offline);
+    }
+    await _iBotSettingsRepository.clearChatData();
+    setState(const AuthenticationState.idle());
+  });
+
+  /// Sign out and fully disconnect the bot — clears chats, token, and stops polling
+  void resetAndSignOut() => handle(() async {
     final identity = state.identity;
     if (identity != null) {
       await _iWorkerStatusManagerRepository.updateStatus(identity.id, IdentityStatus.offline);

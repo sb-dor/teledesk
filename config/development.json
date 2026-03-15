@@ -1,7 +1,7 @@
 {
   "ENVIRONMENT": "development",
   "API_BASE_URL": "",
-  "DATABASE_NAME": "app_database",
+  "DATABASE_NAME": "test_teledesk_db",
   "MAX_LAYOUT_WIDTH": 768,
   "ALPHA": false,
   "BETA": false

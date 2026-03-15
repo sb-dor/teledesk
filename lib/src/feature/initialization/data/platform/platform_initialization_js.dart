@@ -1,9 +1,10 @@
 // ignore_for_file: avoid_web_libraries_in_flutter
 
+import 'package:flutter_web_plugins/flutter_web_plugins.dart';
 import 'package:web/web.dart';
 
 Future<void> $platformInitialization() async {
-  // setUrlStrategy(const HashUrlStrategy());
+  setUrlStrategy( PathUrlStrategy());
 
   // Remove splash screen
   Future<void>.delayed(const Duration(seconds: 1), () {

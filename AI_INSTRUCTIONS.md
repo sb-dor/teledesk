@@ -366,6 +366,27 @@ dependencies.inject(child: MaterialApp(...))
 final deps = DependenciesScope.of(context);
 ```
 
+## Project `lib` Folder Structure
+
+The `lib` folder must follow this top-level structure:
+
+```
+lib/
+├── main.dart
+└── src/
+    ├── common/       # shared utilities, widgets, database, constants, etc.
+    └── feature/      # one sub-folder per feature
+```
+
+**Rules:**
+
+- `lib/main.dart` must always exist as the app entry point.
+- `lib/src/` must always exist. All source code lives inside `src/` — nothing else goes directly under `lib/` except `main.dart`.
+- `lib/src/common/` must always exist for shared code (database, router, constants, models, utilities, common widgets).
+- `lib/src/feature/` must always exist and contains one sub-folder per feature.
+- **If these folders already exist, do not recreate or restructure them.** Only create what is genuinely missing.
+- Never place feature code directly under `lib/src/` — every feature gets its own named folder inside `lib/src/feature/`.
+
 ## Feature Structure Analysis: Example
 
 ### Directory Structure
@@ -408,6 +429,51 @@ example/
 - Controllers manage business logic and state
 - Repositories handle data operations
 - Widgets handle presentation
+
+#### Strict Layer Dependency Rule
+
+Within a single feature, the dependency direction is strictly one-way:
+
+```
+widgets  →  controller  →  data (repository)
+```
+
+**Widgets must never access repositories directly.** All data operations go through the controller. The controller is the only layer that depends on the data layer. Widgets depend only on the controller layer.
+
+**Wrong — widget accessing repository directly:**
+
+```dart
+// ❌ NEVER do this inside a widget or widget state
+class _MyWidgetState extends State<MyWidget> {
+  @override
+  void initState() {
+    super.initState();
+    final deps = Dependencies.of(context);
+    // Directly calling a repository from a widget — violates separation of concerns
+    deps.someRepository.loadData();
+  }
+}
+```
+
+**Correct — widget depends only on controller:**
+
+```dart
+// ✅ Correct approach
+class _MyWidgetState extends State<MyWidget> {
+  late final _scope = MyConfigInhWidget.of(context);
+  late final _controller = _scope.myController;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller.load(); // controller handles all data access internally
+  }
+}
+```
+
+The controller encapsulates all repository calls. If a widget needs data (e.g. quick replies, workers, settings), that data must be fetched inside the controller and exposed via state or a getter — never fetched by the widget itself.
+
+This rule applies everywhere: `StatefulWidget` states, `StatelessWidget` build methods, `InheritedWidget` config states, and data controllers (`ChangeNotifier`-based UI controllers). None of these should hold a reference to any `Repository` class.
 
 ### 2. Testability
 

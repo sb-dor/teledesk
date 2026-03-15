@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:teledesk/src/common/widget/scaffold_padding.dart';
 import 'package:teledesk/src/feature/authentication/model/identity.dart';
 import 'package:teledesk/src/feature/authentication/widget/authentication_scope.dart';
 import 'package:teledesk/src/feature/initialization/models/dependencies.dart';
@@ -118,7 +119,7 @@ class _WorkersScreenState extends State<WorkersScreen> {
           );
         } else {
           body = ListView.separated(
-            padding: const EdgeInsets.all(16),
+            padding: ScaffoldPadding.of(context),
             itemCount: state.workers.length,
             separatorBuilder: (_, __) => const SizedBox(height: 8),
             itemBuilder: (ctx, i) => _WorkerCard(

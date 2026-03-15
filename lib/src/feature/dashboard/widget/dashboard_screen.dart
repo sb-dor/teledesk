@@ -3,6 +3,7 @@ import 'package:octopus/octopus.dart';
 import 'package:teledesk/src/common/router/routes.dart';
 import 'package:teledesk/src/common/util/screen_util.dart';
 import 'package:teledesk/src/common/widget/main_navigation.dart';
+import 'package:teledesk/src/common/widget/scaffold_padding.dart';
 import 'package:teledesk/src/feature/authentication/model/identity.dart';
 import 'package:teledesk/src/feature/authentication/widget/authentication_scope.dart';
 import 'package:teledesk/src/feature/dashboard/controller/dashboard_controller.dart';
@@ -128,83 +129,79 @@ class _DashboardScaffoldState extends State<_DashboardScaffold> {
       ),
       body: RefreshIndicator(
         onRefresh: () async => _dashboardController.load(),
-        child: SingleChildScrollView(
+        child: ListView(
           physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Greeting card
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(20),
-                  child: Row(
-                    children: [
-                      CircleAvatar(
-                        radius: 28,
-                        backgroundColor: colorScheme.primaryContainer,
-                        child: Text(
-                          widget.worker?.initials ?? '?',
-                          style: TextStyle(
-                            color: colorScheme.primary,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 20,
+          padding: ScaffoldPadding.of(context),
+          children:[
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Row(
+                  children: [
+                    CircleAvatar(
+                      radius: 28,
+                      backgroundColor: colorScheme.primaryContainer,
+                      child: Text(
+                        widget.worker?.initials ?? '?',
+                        style: TextStyle(
+                          color: colorScheme.primary,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 20,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Hello, ${widget.worker?.displayName ?? 'Agent'}!',
+                            style: theme.textTheme.titleLarge?.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Hello, ${widget.worker?.displayName ?? 'Agent'}!',
-                              style: theme.textTheme.titleLarge?.copyWith(
-                                fontWeight: FontWeight.bold,
-                              ),
+                          const SizedBox(height: 4),
+                          Text(
+                            widget.worker?.identityRole.name ?? '',
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: colorScheme.onSurfaceVariant,
                             ),
-                            const SizedBox(height: 4),
-                            Text(
-                              widget.worker?.identityRole.name ?? '',
-                              style: theme.textTheme.bodyMedium?.copyWith(
-                                color: colorScheme.onSurfaceVariant,
-                              ),
-                            ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(height: 16),
+            ),
+            const SizedBox(height: 16),
 
-              Text(
-                'Overview',
-                style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+            Text(
+              'Overview',
+              style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 12),
+
+            ListenableBuilder(
+              listenable: _dashboardController,
+              builder: (context, child) => context.screenSizeMaybeWhen(
+                orElse: () => _buildStatsGrid(context, _dashboardController.state, columns: 2),
+                desktop: () => _buildStatsGrid(context, _dashboardController.state, columns: 4),
+                tablet: () => _buildStatsGrid(context, _dashboardController.state, columns: 2),
               ),
-              const SizedBox(height: 12),
+            ),
 
-              ListenableBuilder(
-                listenable: _dashboardController,
-                builder: (context, child) => context.screenSizeMaybeWhen(
-                  orElse: () => _buildStatsGrid(context, _dashboardController.state, columns: 2),
-                  desktop: () => _buildStatsGrid(context, _dashboardController.state, columns: 4),
-                  tablet: () => _buildStatsGrid(context, _dashboardController.state, columns: 2),
-                ),
-              ),
+            const SizedBox(height: 24),
 
-              const SizedBox(height: 24),
+            Text(
+              'Quick Actions',
+              style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 12),
 
-              Text(
-                'Quick Actions',
-                style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 12),
-
-              _buildQuickActions(context),
-            ],
-          ),
+            _buildQuickActions(context)
+          ]
         ),
       ),
     );

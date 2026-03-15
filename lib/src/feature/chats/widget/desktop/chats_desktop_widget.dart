@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:octopus/octopus.dart';
 import 'package:teledesk/src/common/router/routes.dart';
+import 'package:teledesk/src/common/widget/scaffold_padding.dart';
 import 'package:teledesk/src/feature/chats/controller/chats_controller.dart';
 import 'package:teledesk/src/feature/chats/model/conversation.dart';
 import 'package:teledesk/src/feature/chats/widget/chats_config_widget.dart';
@@ -68,7 +69,7 @@ class _ChatsDesktopWidgetState extends State<ChatsDesktopWidget> {
                 children: [
                   // Search bar
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                    padding: ScaffoldPadding.of(context),
                     child: TextField(
                       controller: _searchController,
                       decoration: InputDecoration(
@@ -104,6 +105,7 @@ class _ChatsDesktopWidgetState extends State<ChatsDesktopWidget> {
               // Tabs
               Container(
                 color: Theme.of(context).colorScheme.surface,
+                padding: ScaffoldPadding.of(context),
                 child: Row(
                   children: [
                     Expanded(
@@ -171,16 +173,19 @@ class _ChatsDesktopWidgetState extends State<ChatsDesktopWidget> {
         ),
       );
     }
-    return ListView.separated(
-      itemCount: conversations.length,
-      separatorBuilder: (_, __) => const Divider(height: 1, indent: 72),
-      itemBuilder: (context, index) {
-        final conv = conversations[index];
-        return _ConversationTile(
-          conversation: conv,
-          onTap: () => _navigateToConversation(context, conv.id),
-        );
-      },
+    return Padding(
+      padding: ScaffoldPadding.of(context),
+      child: ListView.separated(
+        itemCount: conversations.length,
+        separatorBuilder: (_, __) => const Divider(height: 1, indent: 72),
+        itemBuilder: (context, index) {
+          final conv = conversations[index];
+          return _ConversationTile(
+            conversation: conv,
+            onTap: () => _navigateToConversation(context, conv.id),
+          );
+        },
+      ),
     );
   }
 }

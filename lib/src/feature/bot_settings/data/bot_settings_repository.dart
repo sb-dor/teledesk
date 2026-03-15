@@ -31,6 +31,8 @@ abstract interface class IBotSettingsRepository {
 
   Future<void> deleteBotToken();
 
+  Future<void> clearChatData();
+
   Future<void> clearAllData();
 }
 
@@ -139,9 +141,14 @@ final class BotSettingsRepositoryImpl implements IBotSettingsRepository {
   }
 
   @override
-  Future<void> clearAllData() async {
+  Future<void> clearChatData() async {
     await _db.delete(_db.messagesTbl).go();
     await _db.delete(_db.conversationsTbl).go();
+  }
+
+  @override
+  Future<void> clearAllData() async {
+    await clearChatData();
     await deleteBotToken();
   }
 }

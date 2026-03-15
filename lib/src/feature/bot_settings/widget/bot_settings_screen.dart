@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:teledesk/src/common/widget/scaffold_padding.dart';
 import 'package:teledesk/src/feature/authentication/model/identity.dart';
 import 'package:teledesk/src/feature/authentication/widget/authentication_scope.dart';
 import 'package:teledesk/src/feature/bot_settings/controller/bot_settings_controller.dart';
@@ -68,8 +69,8 @@ class _BotSettingsScreenState extends State<BotSettingsScreen> {
 
   @override
   void dispose() {
-    _controller.removeListener(_onStateChanged);
-    _controller.dispose();
+    _controller..removeListener(_onStateChanged)
+    ..dispose();
     _tokenCtrl.dispose();
     _welcomeCtrl.dispose();
     _autoReplyCtrl.dispose();
@@ -127,7 +128,7 @@ class _BotSettingsScreenState extends State<BotSettingsScreen> {
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
           : ListView(
-              padding: const EdgeInsets.all(16),
+              padding: ScaffoldPadding.of(context),
               children: [
                 // ── Bot Token section (always first) ──────────────────────
                 _SectionHeader(
@@ -188,6 +189,7 @@ class _BotSettingsScreenState extends State<BotSettingsScreen> {
                         TextField(
                           controller: _tokenCtrl,
                           obscureText: !_tokenVisible,
+                          onChanged: (_) => setState(() {}),
                           decoration: InputDecoration(
                             hintText: '123456789:ABCdefGHIjklMNOpqrSTUvwxyz',
                             label: const Text('Bot Token'),

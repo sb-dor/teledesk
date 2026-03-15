@@ -48,7 +48,7 @@ abstract final class Config {
   /// e.g. sqlite means "sqlite.db" for native platforms and "sqlite" for web platform.
   static const String databaseName = String.fromEnvironment(
     'DATABASE_NAME',
-    defaultValue: 'sqlite',
+    defaultValue: 'local_db',
   );
 
   /// Whether to use in-memory database.
