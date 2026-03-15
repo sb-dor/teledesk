@@ -285,7 +285,7 @@ class _ConversationDesktopWidgetState extends State<ConversationDesktopWidget> {
                 isSending: isSending,
                 isFinished: conversation?.status == ConversationStatus.finished,
                 onTextChanged: (text) {
-                  dataCtrl.setMessageText(text, ctrl.quickReplies);
+                  dataCtrl.setMessageText(text, scope.quickRepliesController.state.replies);
                   // Send typing action debounced
                   _typingTimer?.cancel();
                   if (text.isNotEmpty && !dataCtrl.isNoteMode) {

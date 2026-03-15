@@ -5,9 +5,7 @@ import 'package:teledesk/src/feature/quick_replies/controller/quick_replies_cont
 import 'package:teledesk/src/feature/quick_replies/data/quick_reply_repository.dart';
 import 'package:teledesk/src/feature/quick_replies/model/quick_reply.dart';
 import 'package:teledesk/src/feature/quick_reply_creation/widgets/quick_reply_creation_config_widget.dart';
-import 'package:teledesk/src/feature/quick_reply_creation/widgets/quick_reply_creation_dialog_widget.dart';
 import 'package:teledesk/src/feature/quick_reply_deletion/widgets/quick_reply_deletion_config_widget.dart';
-import 'package:teledesk/src/feature/quick_reply_deletion/widgets/quick_reply_deletion_dialog_widget.dart';
 
 class QuickRepliesScreen extends StatefulWidget {
   const QuickRepliesScreen({super.key});
@@ -24,7 +22,7 @@ class _QuickRepliesScreenState extends State<QuickRepliesScreen> {
     super.initState();
     final db = Dependencies.of(context).database;
     _controller = QuickRepliesController(repository: QuickReplyRepositoryImpl(database: db))
-      ..initialize();
+      ..load();
   }
 
   @override

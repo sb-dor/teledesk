@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:control/control.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:teledesk/src/feature/quick_replies/data/quick_reply_repository.dart';
@@ -30,28 +28,10 @@ final class QuickRepliesController extends StateController<QuickRepliesState>
       super(initialState: const QuickRepliesState.loading());
 
   final IQuickReplyRepository _repository;
-  StreamSubscription<List<QuickReply>>? _sub;
 
-  void initialize() {
-    _sub = _repository.watchAll().listen(
-      (replies) => setState(QuickRepliesState.idle(replies)),
-      onError: (e) => setState(QuickRepliesState.error(e.toString())),
-    );
-  }
-
-  void update(QuickReply reply) => handle(
-    () async => _repository.update(reply),
-    error: (e, st) async => setState(QuickRepliesState.error(e.toString())),
-  );
-
-  void delete(int id) => handle(
-    () async => _repository.delete(id),
-    error: (e, st) async => setState(QuickRepliesState.error(e.toString())),
-  );
-
-  @override
-  void dispose() {
-    _sub?.cancel();
-    super.dispose();
-  }
+  void load() => handle(() async {
+    setState(const QuickRepliesState.loading());
+    final replies = await _repository.getAll();
+    setState(QuickRepliesState.idle(replies));
+  }, error: (e, st) async => setState(QuickRepliesState.error(e.toString())));
 }

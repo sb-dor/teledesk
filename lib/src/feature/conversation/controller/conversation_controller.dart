@@ -6,8 +6,6 @@ import 'package:teledesk/src/feature/authentication/model/identity.dart';
 import 'package:teledesk/src/feature/chats/model/chat_message.dart';
 import 'package:teledesk/src/feature/chats/model/conversation.dart';
 import 'package:teledesk/src/feature/conversation/data/conversation_repository.dart';
-import 'package:teledesk/src/feature/quick_replies/data/quick_reply_repository.dart';
-import 'package:teledesk/src/feature/quick_replies/model/quick_reply.dart';
 import 'package:teledesk/src/feature/telegram/data/telegram_repository.dart';
 import 'package:teledesk/src/feature/workers/data/worker_repository.dart';
 
@@ -31,13 +29,11 @@ final class ConversationController extends StateController<ConversationState>
   ConversationController({
     required IConversationRepository repository,
     required ITelegramRepository telegram,
-    required IQuickReplyRepository quickReplyRepository,
     required IWorkerRepository workerRepository,
     required int conversationId,
     required int currentWorkerId,
   }) : _repository = repository,
        _telegram = telegram,
-       _quickReplyRepository = quickReplyRepository,
        _workerRepository = workerRepository,
        _conversationId = conversationId,
        _workerId = currentWorkerId,
@@ -45,20 +41,16 @@ final class ConversationController extends StateController<ConversationState>
 
   final IConversationRepository _repository;
   final ITelegramRepository _telegram;
-  final IQuickReplyRepository _quickReplyRepository;
   final IWorkerRepository _workerRepository;
   final int _conversationId;
   final int _workerId;
 
   StreamSubscription<Conversation?>? _conversationSub;
   StreamSubscription<List<ChatMessage>>? _chatMessagesSub;
-  StreamSubscription<List<QuickReply>>? _quickRepliesSub;
 
-  List<QuickReply> _quickReplies = [];
   List<Worker> _workers = [];
   bool _isSending = false;
 
-  List<QuickReply> get quickReplies => _quickReplies;
   List<Worker> get workers => _workers;
   bool get isSending => _isSending;
 
@@ -94,10 +86,6 @@ final class ConversationController extends StateController<ConversationState>
       }
     });
 
-    _quickRepliesSub = _quickReplyRepository.watchAll().listen((replies) {
-      _quickReplies = replies;
-      notifyListeners();
-    });
   });
 
   Future<String?> getPhotoUrl(String fileId) => _telegram.getFileUrl(fileId: fileId);
@@ -239,7 +227,6 @@ final class ConversationController extends StateController<ConversationState>
   void dispose() {
     _conversationSub?.cancel();
     _chatMessagesSub?.cancel();
-    _quickRepliesSub?.cancel();
     super.dispose();
   }
 }

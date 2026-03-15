@@ -3,11 +3,7 @@ import 'package:teledesk/src/common/database/database.dart';
 import 'package:teledesk/src/feature/quick_replies/model/quick_reply.dart';
 
 abstract interface class IQuickReplyRepository {
-  Stream<List<QuickReply>> watchAll();
-
-  Future<void> update(QuickReply reply);
-
-  Future<void> delete(int id);
+  Future<List<QuickReply>> getAll();
 }
 
 final class QuickReplyRepositoryImpl implements IQuickReplyRepository {
@@ -24,25 +20,8 @@ final class QuickReplyRepositoryImpl implements IQuickReplyRepository {
   );
 
   @override
-  Stream<List<QuickReply>> watchAll() =>
-      (_db.select(_db.quickRepliesTbl)..orderBy([(t) => OrderingTerm.asc(t.title)])).watch().map(
+  Future<List<QuickReply>> getAll() =>
+      (_db.select(_db.quickRepliesTbl)..orderBy([(t) => OrderingTerm.asc(t.title)])).get().then(
         (rows) => rows.map(_rowToQuickReply).toList(),
       );
-
-  @override
-  Future<void> update(QuickReply reply) async {
-    final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
-    await (_db.update(_db.quickRepliesTbl)..where((t) => t.id.equals(reply.id))).write(
-      QuickRepliesTblCompanion(
-        title: Value(reply.title),
-        content: Value(reply.content),
-        updatedAt: Value(now),
-      ),
-    );
-  }
-
-  @override
-  Future<void> delete(int id) async {
-    await (_db.delete(_db.quickRepliesTbl)..where((t) => t.id.equals(id))).go();
-  }
 }
