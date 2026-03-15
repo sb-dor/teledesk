@@ -5,7 +5,7 @@ Thank you for your interest in contributing! Before you start, please read throu
 ## How This Project Was Built
 
 TeleDesk was developed through **vibe coding** — an iterative, conversation-driven approach using
-[Claude Code](https://claude.ai/claude-code) by Anthropic. The architecture, features, and bug
+[Claude Code](https://claude.ai) by Anthropic. The architecture, features, and bug
 fixes were shaped collaboratively between the developer and Claude in an ongoing dialogue rather
 than written entirely by hand.
 
