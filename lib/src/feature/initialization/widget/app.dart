@@ -8,7 +8,6 @@ import 'package:teledesk/src/common/router/router_state_mixin.dart';
 import 'package:teledesk/src/common/util/performance_overlay_tool.dart';
 import 'package:teledesk/src/common/widget/window_scope.dart';
 import 'package:teledesk/src/feature/authentication/widget/authentication_scope.dart';
-import 'package:teledesk/src/feature/initialization/models/dependencies.dart';
 import 'package:teledesk/src/feature/settings/widget/settings_scope.dart';
 
 /// {@template app}
@@ -22,30 +21,8 @@ class App extends StatefulWidget {
   State<App> createState() => _AppState();
 }
 
-class _AppState extends State<App> with RouterStateMixin, WidgetsBindingObserver {
+class _AppState extends State<App> with RouterStateMixin {
   final Key builderKey = GlobalKey();
-
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addObserver(this);
-  }
-
-  @override
-  void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
-    super.dispose();
-  }
-
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.detached || state == AppLifecycleState.paused) {
-      final authController = Dependencies.of(context).authenticationController;
-      if (authController.state.isAuthenticated) {
-        authController.signOut();
-      }
-    }
-  }
 
   String _buildBannerMessage() {
     if (Config.environment.isProduction) {
