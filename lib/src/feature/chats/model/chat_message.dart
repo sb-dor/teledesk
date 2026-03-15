@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:teledesk/src/feature/authentication/model/identity.dart';
 
 enum MessageType { text, photo, video, gif, sticker, document, voice, videoNote, audio, note }
 
@@ -17,6 +18,7 @@ class ChatMessage {
     required this.isFromBot,
     required this.isNote,
     this.sentByWorkerId,
+    this.worker,
     required this.isRead,
     required this.sentAt,
   });
@@ -33,6 +35,7 @@ class ChatMessage {
   final bool isFromBot;
   final bool isNote;
   final int? sentByWorkerId;
+  final Worker? worker;
   final bool isRead;
   final DateTime sentAt;
 
@@ -67,6 +70,7 @@ class ChatMessage {
     bool? isFromBot,
     bool? isNote,
     ValueGetter<int?>? sentByWorkerId,
+    ValueGetter<Worker?>? worker,
     bool? isRead,
     DateTime? sentAt,
   }) => ChatMessage(
@@ -82,6 +86,7 @@ class ChatMessage {
     isFromBot: isFromBot ?? this.isFromBot,
     isNote: isNote ?? this.isNote,
     sentByWorkerId: sentByWorkerId != null ? sentByWorkerId() : this.sentByWorkerId,
+    worker: worker != null ? worker() : this.worker,
     isRead: isRead ?? this.isRead,
     sentAt: sentAt ?? this.sentAt,
   );

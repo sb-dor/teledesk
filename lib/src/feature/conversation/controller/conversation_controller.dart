@@ -2,12 +2,10 @@ import 'dart:async';
 import 'dart:typed_data';
 import 'package:control/control.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
-import 'package:teledesk/src/feature/authentication/model/identity.dart';
 import 'package:teledesk/src/feature/chats/model/chat_message.dart';
 import 'package:teledesk/src/feature/chats/model/conversation.dart';
 import 'package:teledesk/src/feature/conversation/data/conversation_repository.dart';
 import 'package:teledesk/src/feature/telegram/data/telegram_repository.dart';
-import 'package:teledesk/src/feature/workers/data/worker_repository.dart';
 
 part 'conversation_controller.freezed.dart';
 
@@ -29,35 +27,27 @@ final class ConversationController extends StateController<ConversationState>
   ConversationController({
     required IConversationRepository repository,
     required ITelegramRepository telegram,
-    required IWorkerRepository workerRepository,
     required int conversationId,
     required int currentWorkerId,
   }) : _repository = repository,
        _telegram = telegram,
-       _workerRepository = workerRepository,
        _conversationId = conversationId,
        _workerId = currentWorkerId,
        super(initialState: const ConversationState.loading());
 
   final IConversationRepository _repository;
   final ITelegramRepository _telegram;
-  final IWorkerRepository _workerRepository;
   final int _conversationId;
   final int _workerId;
 
   StreamSubscription<Conversation?>? _conversationSub;
   StreamSubscription<List<ChatMessage>>? _chatMessagesSub;
 
-  List<Worker> _workers = [];
   bool _isSending = false;
 
-  List<Worker> get workers => _workers;
   bool get isSending => _isSending;
 
   void initialize() => handle(() async {
-    _workers = await _workerRepository.getWorkers();
-    notifyListeners();
-
     final conv = await _repository.watchConversation(_conversationId).first;
     if (conv != null) {
       setState(ConversationState.idle(conv, List.empty()));
@@ -85,7 +75,6 @@ final class ConversationController extends StateController<ConversationState>
         setState(ConversationState.idle(current.conversation, messages));
       }
     });
-
   });
 
   Future<String?> getPhotoUrl(String fileId) => _telegram.getFileUrl(fileId: fileId);

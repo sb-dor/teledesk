@@ -7,6 +7,8 @@ part 'workers_controller.freezed.dart';
 
 @freezed
 sealed class WorkersState with _$WorkersState {
+  const WorkersState._();
+
   const factory WorkersState.idle() = Workers$IdleState;
 
   const factory WorkersState.inProgress() = Workers$InProgressState;
@@ -14,6 +16,11 @@ sealed class WorkersState with _$WorkersState {
   const factory WorkersState.error({final String? message}) = Workers$ErrorState;
 
   const factory WorkersState.completed(List<Worker> workers) = Workers$CompletedState;
+
+  List<Worker> get workers => switch (this) {
+    final Workers$CompletedState s => s.workers,
+    _ => const [],
+  };
 }
 
 final class WorkersController extends StateController<WorkersState>

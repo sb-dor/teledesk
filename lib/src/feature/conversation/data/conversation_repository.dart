@@ -1,5 +1,6 @@
 import 'package:drift/drift.dart';
 import 'package:teledesk/src/common/database/database.dart';
+import 'package:teledesk/src/feature/authentication/model/identity.dart';
 import 'package:teledesk/src/feature/chats/model/chat_message.dart';
 import 'package:teledesk/src/feature/chats/model/conversation.dart';
 
@@ -69,7 +70,21 @@ final class ConversationRepositoryImpl implements IConversationRepository {
     createdAt: DateTime.fromMillisecondsSinceEpoch(row.createdAt * 1000),
   );
 
-  ChatMessage _rowToMessage(MessagesTblData row) => ChatMessage(
+  Worker _rowToWorker(WorkersTblData row) => Worker(
+    id: row.id,
+    username: row.username,
+    displayName: row.displayName,
+    colorCode: row.colorCode,
+    status: switch (row.status) {
+      'online' => IdentityStatus.online,
+      'away' => IdentityStatus.away,
+      'busy' => IdentityStatus.busy,
+      _ => IdentityStatus.offline,
+    },
+    createdAt: DateTime.fromMillisecondsSinceEpoch(row.createdAt * 1000),
+  );
+
+  ChatMessage _rowToMessage(MessagesTblData row, {Worker? worker}) => ChatMessage(
     id: row.id,
     conversationId: row.conversationId,
     telegramMessageId: row.telegramMessageId,
@@ -93,6 +108,7 @@ final class ConversationRepositoryImpl implements IConversationRepository {
     isFromBot: row.isFromBot,
     isNote: row.isNote,
     sentByWorkerId: row.sentByWorkerId,
+    worker: worker,
     isRead: row.isRead,
     sentAt: DateTime.fromMillisecondsSinceEpoch(row.sentAt * 1000),
   );
@@ -123,26 +139,24 @@ final class ConversationRepositoryImpl implements IConversationRepository {
   }) async {
     final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
     final sentAtTs = sentAt.millisecondsSinceEpoch ~/ 1000;
-    final id = await _db
-        .into(_db.messagesTbl)
-        .insert(
-          MessagesTblCompanion.insert(
-            conversationId: conversationId,
-            telegramMessageId: const Value(null),
-            messageType: messageType,
-            messageText: Value(text),
-            fileId: Value(fileId),
-            fileName: Value(fileName),
-            fileMimeType: const Value(null),
-            fileSize: const Value(null),
-            isFromBot: const Value(true),
-            isNote: const Value(false),
-            sentByWorkerId: Value(sentByWorkerId),
-            isRead: const Value(true),
-            sentAt: sentAtTs,
-            createdAt: now,
-          ),
-        );
+    final id = await _db.into(_db.messagesTbl).insert(
+      MessagesTblCompanion.insert(
+        conversationId: conversationId,
+        telegramMessageId: const Value(null),
+        messageType: messageType,
+        messageText: Value(text),
+        fileId: Value(fileId),
+        fileName: Value(fileName),
+        fileMimeType: const Value(null),
+        fileSize: const Value(null),
+        isFromBot: const Value(true),
+        isNote: const Value(false),
+        sentByWorkerId: Value(sentByWorkerId),
+        isRead: const Value(true),
+        sentAt: sentAtTs,
+        createdAt: now,
+      ),
+    );
     return ChatMessage(
       id: id,
       conversationId: conversationId,
@@ -166,12 +180,25 @@ final class ConversationRepositoryImpl implements IConversationRepository {
   }
 
   @override
-  Stream<List<ChatMessage>> watchMessages(int conversationId) =>
-      (_db.select(_db.messagesTbl)
-            ..where((t) => t.conversationId.equals(conversationId))
-            ..orderBy([(t) => OrderingTerm.asc(t.sentAt)]))
-          .watch()
-          .map((rows) => rows.map(_rowToMessage).toList());
+  Stream<List<ChatMessage>> watchMessages(int conversationId) {
+    final query = (_db.select(_db.messagesTbl)
+          ..where((t) => t.conversationId.equals(conversationId))
+          ..orderBy([(t) => OrderingTerm.asc(t.sentAt)]))
+        .join([
+          leftOuterJoin(
+            _db.workersTbl,
+            _db.workersTbl.id.equalsExp(_db.messagesTbl.sentByWorkerId),
+          ),
+        ]);
+
+    return query.watch().map(
+      (rows) => rows.map((row) {
+        final msg = row.readTable(_db.messagesTbl);
+        final workerRow = row.readTableOrNull(_db.workersTbl);
+        return _rowToMessage(msg, worker: workerRow != null ? _rowToWorker(workerRow) : null);
+      }).toList(),
+    );
+  }
 
   @override
   Future<ChatMessage> saveNote({
@@ -180,26 +207,24 @@ final class ConversationRepositoryImpl implements IConversationRepository {
     required int sentByWorkerId,
   }) async {
     final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
-    final id = await _db
-        .into(_db.messagesTbl)
-        .insert(
-          MessagesTblCompanion.insert(
-            conversationId: conversationId,
-            telegramMessageId: const Value(null),
-            messageType: 'note',
-            messageText: Value(text),
-            fileId: const Value(null),
-            fileName: const Value(null),
-            fileMimeType: const Value(null),
-            fileSize: const Value(null),
-            isFromBot: const Value(false),
-            isNote: const Value(true),
-            sentByWorkerId: Value(sentByWorkerId),
-            isRead: const Value(true),
-            sentAt: now,
-            createdAt: now,
-          ),
-        );
+    final id = await _db.into(_db.messagesTbl).insert(
+      MessagesTblCompanion.insert(
+        conversationId: conversationId,
+        telegramMessageId: const Value(null),
+        messageType: 'note',
+        messageText: Value(text),
+        fileId: const Value(null),
+        fileName: const Value(null),
+        fileMimeType: const Value(null),
+        fileSize: const Value(null),
+        isFromBot: const Value(false),
+        isNote: const Value(true),
+        sentByWorkerId: Value(sentByWorkerId),
+        isRead: const Value(true),
+        sentAt: now,
+        createdAt: now,
+      ),
+    );
     return ChatMessage(
       id: id,
       conversationId: conversationId,

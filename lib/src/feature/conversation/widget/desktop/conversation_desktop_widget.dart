@@ -4,7 +4,6 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:intl/intl.dart';
-import 'package:teledesk/src/feature/authentication/model/identity.dart';
 import 'package:teledesk/src/feature/authentication/widget/authentication_scope.dart';
 import 'package:teledesk/src/feature/chats/model/chat_message.dart';
 import 'package:teledesk/src/feature/chats/model/conversation.dart';
@@ -82,9 +81,8 @@ class _ConversationDesktopWidgetState extends State<ConversationDesktopWidget> {
     ConversationConfigWidgetState scope,
     int currentWorkerId,
   ) {
-    final otherWorkers = scope.conversationController.workers
-        .where((w) => w.id != currentWorkerId)
-        .toList();
+    final allWorkers = scope.workersController.state.workers;
+    final otherWorkers = allWorkers.where((w) => w.id != currentWorkerId).toList();
     showDialog<void>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -260,7 +258,6 @@ class _ConversationDesktopWidgetState extends State<ConversationDesktopWidget> {
                         messages: chatMessages,
                         scrollController: _scrollController,
                         currentWorkerId: currentWorker?.id ?? 0,
-                        allWorkers: ctrl.workers,
                       ),
               ),
 
@@ -350,13 +347,11 @@ class _MessageList extends StatelessWidget {
     required this.messages,
     required this.scrollController,
     required this.currentWorkerId,
-    required this.allWorkers,
   });
 
   final List<ChatMessage> messages;
   final ScrollController scrollController;
   final int currentWorkerId;
-  final List<Worker> allWorkers;
 
   @override
   Widget build(BuildContext context) {
@@ -380,7 +375,7 @@ class _MessageList extends StatelessWidget {
         return Column(
           children: [
             if (showDate) _DateDivider(date: msg.sentAt),
-            _MessageBubble(message: msg, allWorkers: allWorkers),
+            _MessageBubble(message: msg),
           ],
         );
       },
@@ -424,16 +419,11 @@ class _DateDivider extends StatelessWidget {
 }
 
 class _MessageBubble extends StatelessWidget {
-  const _MessageBubble({required this.message, required this.allWorkers});
+  const _MessageBubble({required this.message});
 
   final ChatMessage message;
-  final List<Worker> allWorkers;
 
-  String _workerName(int? workerId) {
-    if (workerId == null) return 'Worker';
-    final w = allWorkers.where((w) => w.id == workerId).firstOrNull;
-    return w?.displayName ?? 'Worker #$workerId';
-  }
+  String get _workerName => message.worker?.displayName ?? 'Worker';
 
   @override
   Widget build(BuildContext context) {
@@ -473,7 +463,7 @@ class _MessageBubble extends StatelessWidget {
                   ),
                   const SizedBox(width: 6),
                   Text(
-                    '· ${_workerName(message.sentByWorkerId)}',
+                    '· ${_workerName}',
                     style: theme.textTheme.labelSmall?.copyWith(color: noteAccent),
                   ),
                   const Spacer(),
@@ -545,7 +535,7 @@ class _MessageBubble extends StatelessWidget {
                           Padding(
                             padding: const EdgeInsets.only(bottom: 4),
                             child: Text(
-                              _workerName(message.sentByWorkerId),
+                              _workerName,
                               style: TextStyle(
                                 fontSize: 11,
                                 fontWeight: FontWeight.bold,

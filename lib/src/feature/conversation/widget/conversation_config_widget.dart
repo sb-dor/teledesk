@@ -9,6 +9,7 @@ import 'package:teledesk/src/feature/conversation/widget/mobile/conversation_mob
 import 'package:teledesk/src/feature/initialization/models/dependencies.dart';
 import 'package:teledesk/src/feature/quick_replies/controller/quick_replies_controller.dart';
 import 'package:teledesk/src/feature/quick_replies/data/quick_reply_repository.dart';
+import 'package:teledesk/src/feature/workers/controller/workers_controller.dart';
 import 'package:teledesk/src/feature/workers/data/worker_repository.dart';
 
 class ConversationInhWidget extends InheritedWidget {
@@ -36,44 +37,37 @@ class ConversationConfigWidget extends StatefulWidget {
 }
 
 class ConversationConfigWidgetState extends State<ConversationConfigWidget> {
-  ConversationController? _conversationController;
-  ConversationDataController? _conversationDataController;
-  QuickRepliesController? _quickRepliesController;
-  bool _initialized = false;
-
-  ConversationController get conversationController => _conversationController!;
-  ConversationDataController get conversationDataController => _conversationDataController!;
-  QuickRepliesController get quickRepliesController => _quickRepliesController!;
+  late final ConversationController conversationController;
+  late final ConversationDataController conversationDataController;
+  late final QuickRepliesController quickRepliesController;
+  late final WorkersController workersController;
 
   @override
   void initState() {
     super.initState();
-    _conversationDataController = ConversationDataController();
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    if (_initialized) return;
-    _initialized = true;
     final dependencies = Dependencies.of(context);
-    _quickRepliesController = QuickRepliesController(
+    final identity = AuthenticationScope.identityOf(context, listen: false);
+    workersController = WorkersController(
+      repository: WorkerRepositoryImpl(database: dependencies.database),
+    )..load();
+    quickRepliesController = QuickRepliesController(
       repository: QuickReplyRepositoryImpl(database: dependencies.database),
     )..load();
-    _conversationController = ConversationController(
+    conversationController = ConversationController(
       repository: ConversationRepositoryImpl(database: dependencies.database),
       telegram: dependencies.telegramRepository,
-      workerRepository: WorkerRepositoryImpl(database: dependencies.database),
       conversationId: widget.conversationId,
-      currentWorkerId: AuthenticationScope.identityOf(context, listen: false)?.id ?? 0,
+      currentWorkerId: identity?.id ?? 0,
     )..initialize();
+    conversationDataController = ConversationDataController();
   }
 
   @override
   void dispose() {
     conversationController.dispose();
     conversationDataController.dispose();
-    _quickRepliesController?.dispose();
+    quickRepliesController.dispose();
+    workersController.dispose();
     super.dispose();
   }
 
