@@ -5,18 +5,17 @@ import 'package:teledesk/src/feature/quick_reply_deletion/controller/quick_reply
 import 'package:teledesk/src/feature/quick_reply_deletion/widgets/quick_reply_deletion_config_widget.dart';
 
 class QuickReplyDeletionDialogWidget extends StatefulWidget {
-  const QuickReplyDeletionDialogWidget({super.key, required this.reply});
-
-  final QuickReply reply;
+  const QuickReplyDeletionDialogWidget({super.key});
 
   @override
   State<QuickReplyDeletionDialogWidget> createState() => _QuickReplyDeletionDialogWidgetState();
 }
 
 class _QuickReplyDeletionDialogWidgetState extends State<QuickReplyDeletionDialogWidget> {
-  late final _controller = QuickReplyDeletionConfigInhWidget.of(
-    context,
-  ).quickReplyDeletionController;
+  late final _inhWidget = QuickReplyDeletionConfigInhWidget.of(context);
+  late final _controller = _inhWidget.quickReplyDeletionController;
+  late final _onSuccessfullyDelete = _inhWidget.onSuccessfullyDelete;
+  late final _reply = _inhWidget.reply;
 
   @override
   Widget build(BuildContext context) {
@@ -25,6 +24,7 @@ class _QuickReplyDeletionDialogWidgetState extends State<QuickReplyDeletionDialo
       listener: (context, controller, oldState, newState) {
         if (newState is QuickReplyDeletion$CompletedState) {
           Navigator.pop(context);
+          _onSuccessfullyDelete?.call();
         }
       },
       builder: (context, state, child) {
@@ -32,14 +32,14 @@ class _QuickReplyDeletionDialogWidgetState extends State<QuickReplyDeletionDialo
           canPop: state is! QuickReplyDeletion$InProgressState,
           child: AlertDialog(
             title: const Text('Delete Quick Reply'),
-            content: Text('Delete "#${widget.reply.title}"? This cannot be undone.'),
+            content: Text('Delete "#${_reply.title}"? This cannot be undone.'),
             actions: [
               TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Cancel')),
               FilledButton(
                 style: FilledButton.styleFrom(backgroundColor: Theme.of(context).colorScheme.error),
                 onPressed: state is QuickReplyDeletion$InProgressState
                     ? null
-                    : () => _controller.delete(widget.reply.id),
+                    : () => _controller.delete(_reply.id),
                 child: const Text('Delete'),
               ),
             ],

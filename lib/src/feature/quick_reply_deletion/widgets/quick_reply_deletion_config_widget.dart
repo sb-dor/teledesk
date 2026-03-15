@@ -23,18 +23,31 @@ class QuickReplyDeletionConfigInhWidget extends InheritedWidget {
 }
 
 class QuickReplyDeletionConfigWidget extends StatefulWidget {
-  const QuickReplyDeletionConfigWidget({super.key, required this.builder});
+  const QuickReplyDeletionConfigWidget({
+    super.key,
+    required this.builder,
+    required this.reply,
+    this.onSuccessfullyDelete,
+  });
 
-  static Future<void> showDeletionDialog(BuildContext context, final QuickReply reply) {
+  static Future<void> showDeletionDialog(
+    BuildContext context,
+    final QuickReply reply, {
+    final void Function()? onSuccessfullyDelete,
+  }) {
     return showDialog<void>(
       context: context,
       builder: (ctx) => QuickReplyDeletionConfigWidget(
-        builder: (_) => QuickReplyDeletionDialogWidget(reply: reply),
+        onSuccessfullyDelete: onSuccessfullyDelete,
+        reply: reply,
+        builder: (_) => const QuickReplyDeletionDialogWidget(),
       ),
     );
   }
 
   final WidgetBuilder builder;
+  final QuickReply reply;
+  final void Function()? onSuccessfullyDelete;
 
   @override
   State<QuickReplyDeletionConfigWidget> createState() => QuickReplyDeletionConfigWidgetState();
@@ -42,6 +55,8 @@ class QuickReplyDeletionConfigWidget extends StatefulWidget {
 
 class QuickReplyDeletionConfigWidgetState extends State<QuickReplyDeletionConfigWidget> {
   late final QuickReplyDeletionController quickReplyDeletionController;
+  late final onSuccessfullyDelete = widget.onSuccessfullyDelete;
+  late final reply = widget.reply;
 
   @override
   void initState() {
