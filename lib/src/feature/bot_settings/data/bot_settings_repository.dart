@@ -113,9 +113,15 @@ final class BotSettingsRepositoryImpl implements IBotSettingsRepository {
 
   @override
   Future<Map<String, dynamic>> saveBotToken(String token) async {
+    final previousToken = await getStoredBotToken();
     _telegram.updateToken(token);
     try {
       final info = await _telegram.getMe(); // throws if invalid
+      if (previousToken != token) {
+        // Different bot — wipe all conversations and messages
+        await _db.delete(_db.messagesTbl).go();
+        await _db.delete(_db.conversationsTbl).go();
+      }
       await saveSetting('bot_token', token);
       return info;
     } catch (_) {
