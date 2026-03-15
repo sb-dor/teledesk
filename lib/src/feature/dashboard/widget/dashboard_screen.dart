@@ -132,7 +132,7 @@ class _DashboardScaffoldState extends State<_DashboardScaffold> {
         child: ListView(
           physics: const AlwaysScrollableScrollPhysics(),
           padding: ScaffoldPadding.of(context),
-          children:[
+          children: [
             Card(
               child: Padding(
                 padding: const EdgeInsets.all(20),
@@ -200,8 +200,8 @@ class _DashboardScaffoldState extends State<_DashboardScaffold> {
             ),
             const SizedBox(height: 12),
 
-            _buildQuickActions(context)
-          ]
+            _buildQuickActions(context),
+          ],
         ),
       ),
     );

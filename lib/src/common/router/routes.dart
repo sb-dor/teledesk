@@ -8,6 +8,7 @@ import 'package:teledesk/src/feature/conversation/widget/conversation_screen.dar
 import 'package:teledesk/src/feature/dashboard/widget/dashboard_screen.dart';
 import 'package:teledesk/src/feature/developer/widget/developer_screen.dart';
 import 'package:teledesk/src/feature/settings/widget/settings_screen.dart';
+import 'package:teledesk/src/feature/quick_replies/widget/quick_replies_screen.dart';
 import 'package:teledesk/src/feature/workers/widget/workers_screen.dart';
 
 enum Routes with OctopusRoute {
@@ -18,6 +19,7 @@ enum Routes with OctopusRoute {
   conversation('conversation', title: 'Conversation'),
   botSettings('bot-settings', title: 'Bot Settings'),
   workers('workers', title: 'Workers'),
+  quickReplies('quick-replies', title: 'Quick Replies'),
   settings('settings', title: 'Settings'),
   developer('developer', title: 'Developer');
 
@@ -40,6 +42,7 @@ enum Routes with OctopusRoute {
     ),
     Routes.botSettings => const BotSettingsScreen(),
     Routes.workers => const WorkersScreen(),
+    Routes.quickReplies => const QuickRepliesScreen(),
     Routes.settings => const SettingsScreen(),
     Routes.developer => const DeveloperScreen(),
   };

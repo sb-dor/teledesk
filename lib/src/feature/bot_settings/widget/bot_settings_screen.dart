@@ -69,8 +69,9 @@ class _BotSettingsScreenState extends State<BotSettingsScreen> {
 
   @override
   void dispose() {
-    _controller..removeListener(_onStateChanged)
-    ..dispose();
+    _controller
+      ..removeListener(_onStateChanged)
+      ..dispose();
     _tokenCtrl.dispose();
     _welcomeCtrl.dispose();
     _autoReplyCtrl.dispose();

@@ -82,8 +82,9 @@ class _ConversationDesktopWidgetState extends State<ConversationDesktopWidget> {
     ConversationConfigWidgetState scope,
     int currentWorkerId,
   ) {
-    final otherWorkers =
-        scope.conversationController.workers.where((w) => w.id != currentWorkerId).toList();
+    final otherWorkers = scope.conversationController.workers
+        .where((w) => w.id != currentWorkerId)
+        .toList();
     showDialog<void>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -269,10 +270,10 @@ class _ConversationDesktopWidgetState extends State<ConversationDesktopWidget> {
                   replies: dataCtrl.filteredReplies,
                   onSelect: (reply) {
                     dataCtrl.selectQuickReply(reply);
-                    _textController.text = reply.content;
-                    _textController.selection = TextSelection.collapsed(
-                      offset: reply.content.length,
-                    );
+                    _textController.clear();
+                    dataCtrl.clearMessage();
+                    scope.conversationController.sendText(reply.content);
+                    _focusNode.requestFocus();
                   },
                 ),
 
@@ -714,10 +715,7 @@ class _MediaTile extends StatelessWidget {
                 Flexible(
                   child: Text(
                     label,
-                    style: TextStyle(
-                      color: textColor,
-                      fontStyle: FontStyle.italic,
-                    ),
+                    style: TextStyle(color: textColor, fontStyle: FontStyle.italic),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -806,9 +804,7 @@ class _PhotoBubbleState extends State<_PhotoBubble> {
             InteractiveViewer(
               minScale: 0.5,
               maxScale: 4,
-              child: Center(
-                child: Image.network(url, fit: BoxFit.contain),
-              ),
+              child: Center(child: Image.network(url, fit: BoxFit.contain)),
             ),
             Positioned(
               top: 12,
@@ -874,39 +870,59 @@ class _QuickRepliesPanel extends StatelessWidget {
           ),
         ],
       ),
-      child: ListView.builder(
-        padding: EdgeInsets.zero,
-        shrinkWrap: true,
-        itemCount: replies.length,
-        itemBuilder: (ctx, i) {
-          final reply = replies[i];
-          return ListTile(
-            dense: true,
-            leading: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-              decoration: BoxDecoration(
-                color: theme.colorScheme.primaryContainer,
-                borderRadius: BorderRadius.circular(4),
+      child: replies.isEmpty
+          ? Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.info_outline_rounded,
+                    size: 16,
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'No quick replies yet. Add some in Settings → Quick Replies.',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
               ),
-              child: Text(
-                '#${reply.title}',
-                style: TextStyle(
-                  fontSize: 11,
-                  color: theme.colorScheme.primary,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
+            )
+          : ListView.builder(
+              padding: EdgeInsets.zero,
+              shrinkWrap: true,
+              itemCount: replies.length,
+              itemBuilder: (ctx, i) {
+                final reply = replies[i];
+                return ListTile(
+                  dense: true,
+                  leading: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.primaryContainer,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Text(
+                      '#${reply.title}',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: theme.colorScheme.primary,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  title: Text(
+                    reply.content,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.bodySmall,
+                  ),
+                  onTap: () => onSelect(reply),
+                );
+              },
             ),
-            title: Text(
-              reply.content,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: theme.textTheme.bodySmall,
-            ),
-            onTap: () => onSelect(reply),
-          );
-        },
-      ),
     );
   }
 }

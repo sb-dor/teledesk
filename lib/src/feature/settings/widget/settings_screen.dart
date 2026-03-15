@@ -125,6 +125,31 @@ class _SettingsScaffold extends StatelessWidget {
           ),
           const SizedBox(height: 16),
 
+          // Tools section
+          Text(
+            'Tools',
+            style: theme.textTheme.labelLarge?.copyWith(color: colorScheme.onSurfaceVariant),
+          ),
+          const SizedBox(height: 8),
+          Card(
+            child: ListTile(
+              leading: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: colorScheme.tertiaryContainer,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(Icons.quickreply_outlined, color: colorScheme.tertiary, size: 20),
+              ),
+              title: const Text('Quick Replies'),
+              subtitle: const Text('Manage # shortcuts for chat'),
+              trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 16),
+              onTap: () =>
+                  Octopus.of(context).setState((state) => state..add(Routes.quickReplies.node())),
+            ),
+          ),
+          const SizedBox(height: 16),
+
           // Admin section
           if (isAdmin) ...[
             Text(

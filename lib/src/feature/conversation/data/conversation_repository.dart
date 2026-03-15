@@ -28,7 +28,7 @@ abstract interface class IConversationRepository {
 
   Future<void> markMessagesRead(int conversationId);
 
-  Future<void> updateLastMessage(int conversationId, String preview, DateTime time);
+  Future<void> updateLastMessage(int conversationId, String preview, DateTime time, {bool incrementUnread = true});
 
   Future<void> assignConversation(int conversationId, int workerId);
 
@@ -102,9 +102,9 @@ final class ConversationRepositoryImpl implements IConversationRepository {
 
   @override
   Stream<Conversation?> watchConversation(int id) =>
-      (_db.select(_db.conversationsTbl)..where((t) => t.id.equals(id)))
-          .watchSingleOrNull()
-          .map((row) => row != null ? _rowToConversation(row) : null);
+      (_db.select(_db.conversationsTbl)..where((t) => t.id.equals(id))).watchSingleOrNull().map(
+        (row) => row != null ? _rowToConversation(row) : null,
+      );
 
   @override
   Future<ChatMessage> saveOutgoingMessage({
@@ -227,10 +227,13 @@ final class ConversationRepositoryImpl implements IConversationRepository {
   }
 
   @override
-  Future<void> updateLastMessage(int conversationId, String preview, DateTime time) async {
+  Future<void> updateLastMessage(int conversationId, String preview, DateTime time, {bool incrementUnread = true}) async {
     final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+    final sql = incrementUnread
+        ? 'UPDATE conversations SET last_message_preview = ?, last_message_at = ?, updated_at = ?, unread_count = unread_count + 1 WHERE id = ?'
+        : 'UPDATE conversations SET last_message_preview = ?, last_message_at = ?, updated_at = ? WHERE id = ?';
     await _db.customUpdate(
-      'UPDATE conversations SET last_message_preview = ?, last_message_at = ?, updated_at = ?, unread_count = unread_count + 1 WHERE id = ?',
+      sql,
       variables: [
         Variable<String>(preview),
         Variable<int>(time.millisecondsSinceEpoch ~/ 1000),

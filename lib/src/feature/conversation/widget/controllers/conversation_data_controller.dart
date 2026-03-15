@@ -14,17 +14,19 @@ class ConversationDataController with ChangeNotifier {
 
   void setMessageText(String text, List<QuickReply> allReplies) {
     _messageText = text;
-    if (text.startsWith('#') && text.length > 1) {
-      final query = text.substring(1).toLowerCase();
-      _filteredReplies = allReplies
-          .where(
-            (r) => r.title.toLowerCase().contains(query) || r.content.toLowerCase().contains(query),
-          )
-          .toList();
-      _showQuickReplies = _filteredReplies.isNotEmpty;
-    } else if (text == '#') {
-      _filteredReplies = allReplies;
-      _showQuickReplies = _filteredReplies.isNotEmpty;
+    if (text.startsWith('#')) {
+      if (text.length > 1) {
+        final query = text.substring(1).toLowerCase();
+        _filteredReplies = allReplies
+            .where(
+              (r) =>
+                  r.title.toLowerCase().contains(query) || r.content.toLowerCase().contains(query),
+            )
+            .toList();
+      } else {
+        _filteredReplies = allReplies;
+      }
+      _showQuickReplies = true;
     } else {
       _showQuickReplies = false;
       _filteredReplies = [];
