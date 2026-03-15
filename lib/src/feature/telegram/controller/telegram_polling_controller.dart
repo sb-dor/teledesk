@@ -1,20 +1,34 @@
 import 'dart:async';
-import 'package:flutter/foundation.dart';
+import 'package:control/control.dart';
+import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:teledesk/src/feature/conversation/data/conversation_repository.dart';
-
 import 'package:teledesk/src/feature/telegram/data/telegram_repository.dart';
 import 'package:teledesk/src/feature/telegram/model/telegram_update.dart';
 
+part 'telegram_polling_controller.freezed.dart';
+
+@freezed
+sealed class TelegramPollingState with _$TelegramPollingState {
+  const TelegramPollingState._();
+
+  const factory TelegramPollingState.idle() = TelegramPolling$IdleState;
+  const factory TelegramPollingState.polling() = TelegramPolling$PollingState;
+  const factory TelegramPollingState.error(String message) = TelegramPolling$ErrorState;
+
+  bool get isPolling => this is TelegramPolling$PollingState;
+}
+
 /// Manages long-polling loop and processes incoming Telegram updates.
 /// Saves messages to DB. UI reacts via Drift streams.
-final class TelegramPollingController with ChangeNotifier {
+final class TelegramPollingController extends StateController<TelegramPollingState> {
   TelegramPollingController({
     required ITelegramRepository telegramRepository,
     required IConversationRepository conversationRepository,
     required int pollingTimeoutSeconds,
   }) : _telegram = telegramRepository,
        _conversations = conversationRepository,
-       _pollingTimeout = pollingTimeoutSeconds;
+       _pollingTimeout = pollingTimeoutSeconds,
+       super(initialState: const TelegramPollingState.idle());
 
   final ITelegramRepository _telegram;
   final IConversationRepository _conversations;
@@ -28,13 +42,13 @@ final class TelegramPollingController with ChangeNotifier {
   void startPolling() {
     if (_isPolling) return;
     _isPolling = true;
-    notifyListeners();
+    setState(const TelegramPollingState.polling());
     _poll();
   }
 
   void stopPolling() {
     _isPolling = false;
-    notifyListeners();
+    setState(const TelegramPollingState.idle());
   }
 
   Future<void> _poll() async {
@@ -51,9 +65,11 @@ final class TelegramPollingController with ChangeNotifier {
           }
           await _processUpdate(update);
         }
-      } catch (_) {
+      } catch (e) {
         if (!_isPolling) break;
+        setState(TelegramPollingState.error(e.toString()));
         await Future<void>.delayed(const Duration(seconds: 2));
+        if (_isPolling) setState(const TelegramPollingState.polling());
       }
     }
   }
