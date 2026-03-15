@@ -4,11 +4,11 @@ import 'package:teledesk/src/feature/authentication/widget/signin_screen.dart';
 import 'package:teledesk/src/feature/authentication/widget/signup_screen.dart';
 import 'package:teledesk/src/feature/bot_settings/widget/bot_settings_screen.dart';
 import 'package:teledesk/src/feature/chats/widget/chats_config_widget.dart';
-import 'package:teledesk/src/feature/conversation/widget/conversation_screen.dart';
+import 'package:teledesk/src/feature/conversation/widget/conversation_config_widget.dart';
 import 'package:teledesk/src/feature/dashboard/widget/dashboard_screen.dart';
 import 'package:teledesk/src/feature/developer/widget/developer_screen.dart';
-import 'package:teledesk/src/feature/settings/widget/settings_screen.dart';
 import 'package:teledesk/src/feature/quick_replies/widget/quick_replies_screen.dart';
+import 'package:teledesk/src/feature/settings/widget/settings_screen.dart';
 import 'package:teledesk/src/feature/workers/widget/workers_screen.dart';
 
 enum Routes with OctopusRoute {
@@ -37,7 +37,7 @@ enum Routes with OctopusRoute {
     Routes.signup => const SignUpScreen(),
     Routes.dashboard => const DashboardScreen(),
     Routes.chats => const ChatsConfigWidget(),
-    Routes.conversation => ConversationScreen(
+    Routes.conversation => ConversationConfigWidget(
       conversationId: int.tryParse(node.arguments['id'] ?? '') ?? 0,
     ),
     Routes.botSettings => const BotSettingsScreen(),

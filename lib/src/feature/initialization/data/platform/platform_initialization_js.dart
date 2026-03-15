@@ -4,7 +4,7 @@ import 'package:flutter_web_plugins/flutter_web_plugins.dart';
 import 'package:web/web.dart';
 
 Future<void> $platformInitialization() async {
-  setUrlStrategy( PathUrlStrategy());
+  setUrlStrategy(PathUrlStrategy());
 
   // Remove splash screen
   Future<void>.delayed(const Duration(seconds: 1), () {

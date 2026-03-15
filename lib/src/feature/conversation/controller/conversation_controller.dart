@@ -117,7 +117,12 @@ final class ConversationController extends StateController<ConversationState>
         sentByWorkerId: _workerId,
         sentAt: DateTime.now(),
       );
-      await _repository.updateLastMessage(_conversationId, text, DateTime.now(), incrementUnread: false);
+      await _repository.updateLastMessage(
+        _conversationId,
+        text,
+        DateTime.now(),
+        incrementUnread: false,
+      );
       _isSending = false;
       notifyListeners();
     },

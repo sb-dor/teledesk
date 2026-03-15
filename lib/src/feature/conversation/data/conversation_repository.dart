@@ -28,7 +28,12 @@ abstract interface class IConversationRepository {
 
   Future<void> markMessagesRead(int conversationId);
 
-  Future<void> updateLastMessage(int conversationId, String preview, DateTime time, {bool incrementUnread = true});
+  Future<void> updateLastMessage(
+    int conversationId,
+    String preview,
+    DateTime time, {
+    bool incrementUnread = true,
+  });
 
   Future<void> assignConversation(int conversationId, int workerId);
 
@@ -227,7 +232,12 @@ final class ConversationRepositoryImpl implements IConversationRepository {
   }
 
   @override
-  Future<void> updateLastMessage(int conversationId, String preview, DateTime time, {bool incrementUnread = true}) async {
+  Future<void> updateLastMessage(
+    int conversationId,
+    String preview,
+    DateTime time, {
+    bool incrementUnread = true,
+  }) async {
     final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
     final sql = incrementUnread
         ? 'UPDATE conversations SET last_message_preview = ?, last_message_at = ?, updated_at = ?, unread_count = unread_count + 1 WHERE id = ?'
