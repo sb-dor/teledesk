@@ -20,8 +20,8 @@ Read `AI_INSTRUCTIONS.md` for the full architecture reference. The short version
 - **`lib/` structure**: `main.dart` + `src/common/` + `src/feature/`. Do not restructure this.
 - **One feature per folder** inside `src/feature/`. Each feature contains `controller/`, `data/`,
   `model/`, and `widget/` sub-folders.
-- **State management**: use `StateController` + `freezed` for business logic, `ChangeNotifier`
-  for UI-only state inside `widget/controllers/`. No Provider, Riverpod, MobX, GetX, or BLoC.
+- **State management**: use `Control` + `freezed` for business logic, `ChangeNotifier`
+  for UI-only state inside `widget/controllers/`. No Provider, Riverpod, MobX or GetX.
 - **Repositories**: always define an abstract interface (`IXxxRepository`) and a concrete `impl`.
 
 ## Code Generation
