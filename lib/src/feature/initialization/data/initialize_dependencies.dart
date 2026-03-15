@@ -113,6 +113,8 @@ final Map<String, _InitializationStep> _initializationSteps = <String, _Initiali
           appDatabase: dependencies.database,
           cryptoUtil: CryptoUtil(),
         ),
+        botSettingsRepository: dependencies.botSettingsRepository,
+        pollingController: dependencies.telegramPollingController,
       ),
 
   // The 'Shrink database' step will only be included in non-release builds.

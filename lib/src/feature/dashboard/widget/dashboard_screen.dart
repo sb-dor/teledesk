@@ -91,7 +91,6 @@ class _DashboardScaffold extends StatefulWidget {
 class _DashboardScaffoldState extends State<_DashboardScaffold> {
   late final _dashboardInhWidget = DashboardInhWidget.of(context);
   late final _dashboardController = _dashboardInhWidget.dashboardController;
-  late final _identity = _dashboardInhWidget.identity;
 
   @override
   Widget build(BuildContext context) {

@@ -4,7 +4,7 @@ import 'dart:async';
 
 import 'package:l/l.dart';
 import 'package:teledesk/src/common/util/error_util/platform/error_util_vm.dart'
-    if (dart.library.html) 'package:teledesk/src/common/util/platform/error_util_js.dart';
+    if (dart.library.html) 'package:teledesk/src/common/util/error_util/platform/error_util_js.dart';
 
 /// Error util.
 abstract final class ErrorUtil {

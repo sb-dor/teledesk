@@ -30,6 +30,8 @@ abstract interface class IBotSettingsRepository {
   Future<Map<String, dynamic>> saveBotToken(String token);
 
   Future<void> deleteBotToken();
+
+  Future<void> clearAllData();
 }
 
 final class BotSettingsRepositoryImpl implements IBotSettingsRepository {
@@ -134,5 +136,12 @@ final class BotSettingsRepositoryImpl implements IBotSettingsRepository {
   Future<void> deleteBotToken() async {
     await (_db.delete(_db.botSettingsTbl)..where((t) => t.key.equals('bot_token'))).go();
     _telegram.clearToken();
+  }
+
+  @override
+  Future<void> clearAllData() async {
+    await _db.delete(_db.messagesTbl).go();
+    await _db.delete(_db.conversationsTbl).go();
+    await deleteBotToken();
   }
 }

@@ -3,6 +3,8 @@ import 'package:flutter/foundation.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:teledesk/src/feature/authentication/data/authentication_repository.dart';
 import 'package:teledesk/src/feature/authentication/model/identity.dart';
+import 'package:teledesk/src/feature/bot_settings/data/bot_settings_repository.dart';
+import 'package:teledesk/src/feature/telegram/controller/telegram_polling_controller.dart';
 import 'package:teledesk/src/feature/worker_creation/data/worker_creation_repository.dart';
 import 'package:teledesk/src/feature/worker_status_manager/data/worker_status_manager_repository.dart';
 import 'package:teledesk/src/feature/workers/data/worker_repository.dart';
@@ -63,16 +65,22 @@ final class AuthenticationController extends StateController<AuthenticationState
     required final IWorkerCreationRepository workerCreationRepository,
     required final IWorkerStatusManagerRepository workerStatusManagerRepository,
     required final IWorkerRepository workerRepository,
+    required final IBotSettingsRepository botSettingsRepository,
+    required final TelegramPollingController pollingController,
     super.initialState = const AuthenticationState.idle(),
   }) : _iAuthenticationRepository = authenticationRepository,
        _iWorkerRepository = workerRepository,
        _iWorkerCreationRepository = workerCreationRepository,
-       _iWorkerStatusManagerRepository = workerStatusManagerRepository;
+       _iWorkerStatusManagerRepository = workerStatusManagerRepository,
+       _iBotSettingsRepository = botSettingsRepository,
+       _pollingController = pollingController;
 
   final IAuthenticationRepository _iAuthenticationRepository;
   final IWorkerRepository _iWorkerRepository;
   final IWorkerCreationRepository _iWorkerCreationRepository;
   final IWorkerStatusManagerRepository _iWorkerStatusManagerRepository;
+  final IBotSettingsRepository _iBotSettingsRepository;
+  final TelegramPollingController _pollingController;
 
   /// Check if first-time setup is needed
   void checkSetup() => handle(() async {
@@ -130,6 +138,8 @@ final class AuthenticationController extends StateController<AuthenticationState
     if (identity != null) {
       await _iWorkerStatusManagerRepository.updateStatus(identity.id, IdentityStatus.offline);
     }
+    _pollingController.stopPolling();
+    await _iBotSettingsRepository.clearAllData();
     setState(const AuthenticationState.idle());
   });
 }
