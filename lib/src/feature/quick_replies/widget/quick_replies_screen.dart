@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:teledesk/src/common/widget/scaffold_padding.dart';
-import 'package:teledesk/src/feature/authentication/widget/authentication_scope.dart';
 import 'package:teledesk/src/feature/initialization/models/dependencies.dart';
 import 'package:teledesk/src/feature/quick_replies/controller/quick_replies_controller.dart';
 import 'package:teledesk/src/feature/quick_replies/data/quick_reply_repository.dart';
 import 'package:teledesk/src/feature/quick_replies/model/quick_reply.dart';
+import 'package:teledesk/src/feature/quick_reply_creation/widgets/quick_reply_creation_config_widget.dart';
+import 'package:teledesk/src/feature/quick_reply_creation/widgets/quick_reply_creation_dialog_widget.dart';
+import 'package:teledesk/src/feature/quick_reply_deletion/widgets/quick_reply_deletion_config_widget.dart';
+import 'package:teledesk/src/feature/quick_reply_deletion/widgets/quick_reply_deletion_dialog_widget.dart';
 
 class QuickRepliesScreen extends StatefulWidget {
   const QuickRepliesScreen({super.key});
@@ -30,94 +33,6 @@ class _QuickRepliesScreenState extends State<QuickRepliesScreen> {
     super.dispose();
   }
 
-  void _showDialog({final QuickReply? existing}) {
-    final titleCtrl = TextEditingController(text: existing?.title ?? '');
-    final contentCtrl = TextEditingController(text: existing?.content ?? '');
-    final identity = AuthenticationScope.identityOf(context);
-
-    showDialog<void>(
-      context: context,
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setDialogState) => AlertDialog(
-          title: Text(existing == null ? 'Add Quick Reply' : 'Edit Quick Reply'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: titleCtrl,
-                decoration: const InputDecoration(
-                  labelText: 'Shortcut',
-                  hintText: 'greeting',
-                  prefixText: '# ',
-                  helperText: 'Type # + shortcut in chat to use',
-                ),
-                onChanged: (_) => setDialogState(() {}),
-                textInputAction: TextInputAction.next,
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: contentCtrl,
-                decoration: const InputDecoration(
-                  labelText: 'Message',
-                  hintText: 'Hello! How can I help you today?',
-                ),
-                onChanged: (_) => setDialogState(() {}),
-                maxLines: 3,
-                textInputAction: TextInputAction.done,
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text('Cancel')),
-            FilledButton(
-              onPressed: titleCtrl.text.trim().isEmpty || contentCtrl.text.trim().isEmpty
-                  ? null
-                  : () {
-                      Navigator.of(ctx).pop();
-                      if (existing == null) {
-                        _controller.create(
-                          title: titleCtrl.text.trim(),
-                          content: contentCtrl.text.trim(),
-                          workerId: identity?.id ?? 0,
-                        );
-                      } else {
-                        _controller.update(
-                          existing.copyWith(
-                            title: titleCtrl.text.trim(),
-                            content: contentCtrl.text.trim(),
-                          ),
-                        );
-                      }
-                    },
-              child: const Text('Save'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _confirmDelete(QuickReply reply) {
-    showDialog<void>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Delete Quick Reply'),
-        content: Text('Delete "#${reply.title}"? This cannot be undone.'),
-        actions: [
-          TextButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text('Cancel')),
-          FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: Theme.of(context).colorScheme.error),
-            onPressed: () {
-              Navigator.of(ctx).pop();
-              _controller.delete(reply.id);
-            },
-            child: const Text('Delete'),
-          ),
-        ],
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -129,7 +44,7 @@ class _QuickRepliesScreenState extends State<QuickRepliesScreen> {
         leading: BackButton(onPressed: () => Navigator.of(context).maybePop()),
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: _showDialog,
+        onPressed: () => QuickReplyCreationConfigWidget.showCreationDialog(context),
         icon: const Icon(Icons.add_rounded),
         label: const Text('Add Reply'),
       ),
@@ -213,7 +128,10 @@ class _QuickRepliesScreenState extends State<QuickRepliesScreen> {
                     children: [
                       IconButton(
                         icon: const Icon(Icons.edit_rounded, size: 18),
-                        onPressed: () => _showDialog(existing: reply),
+                        onPressed: () => QuickReplyCreationConfigWidget.showCreationDialog(
+                          context,
+                          existing: reply,
+                        ),
                         tooltip: 'Edit',
                       ),
                       IconButton(
@@ -222,7 +140,8 @@ class _QuickRepliesScreenState extends State<QuickRepliesScreen> {
                           size: 18,
                           color: colorScheme.error,
                         ),
-                        onPressed: () => _confirmDelete(reply),
+                        onPressed: () =>
+                            QuickReplyDeletionConfigWidget.showDeletionDialog(context, reply),
                         tooltip: 'Delete',
                       ),
                     ],

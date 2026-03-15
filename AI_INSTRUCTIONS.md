@@ -613,6 +613,119 @@ ListenableBuilder(
 // Rather than ValueListenableBuilder which is for ValueNotifier
 ```
 
+## Single Responsibility Principle for Features and Controllers
+
+Every feature folder and every controller must have **one clearly defined domain responsibility**. A responsibility is not a single function — it is a single domain concern.
+
+### What "one responsibility" means
+
+A controller may have multiple methods as long as they all serve the same domain concern:
+
+```dart
+// ✅ Correct — AuthenticationController has one responsibility: managing auth state.
+// signIn, signOut, checkToken all answer the same question: "is this user authenticated?"
+class AuthenticationController {
+  void signIn({required String username, required String password}) => ...
+  void signOut() => ...
+  void checkToken() => ...
+}
+```
+
+This is fine. All three methods are facets of the same concern. Splitting them into three separate features would be over-engineering.
+
+### When to split into separate features
+
+Split when two things have **genuinely independent UI state machines** or **no logical connection at the domain level**.
+
+The quick replies functionality is split into three features because each has a distinct concern:
+
+```
+quick_replies/          → "Provide the reactive list of quick replies to the UI"
+quick_reply_creation/   → "Manage the create/edit form lifecycle (inProgress, completed, error)"
+quick_reply_deletion/   → "Manage the delete confirmation lifecycle (inProgress, completed, error)"
+```
+
+The creation form and the deletion dialog each need their own `inProgress` / `completed` / `error` state independently. If they shared one controller, a deletion in progress could overwrite the creation form's state — causing wrong UI feedback and broken `PopScope` behaviour. The list (watching a stream) has no state overlap with either mutation. These are separate concerns, so they are separate features.
+
+### The pattern for mutation features (creation, deletion)
+
+Each mutation feature follows this exact structure:
+
+```
+feature_name/
+├── data/feature_name_repository.dart      (interface + impl)
+├── controller/feature_name_controller.dart (freezed states + handle())
+└── widgets/
+    ├── feature_name_config_widget.dart    (InheritedWidget scope + static factory)
+    └── feature_name_dialog_widget.dart    (form/confirmation UI)
+```
+
+**Controller** uses `DroppableControllerHandler` for mutations so duplicate taps are dropped:
+
+```dart
+class QuickReplyCreationController extends StateController<QuickReplyCreationState>
+    with DroppableControllerHandler {
+
+  void save({required String title, required String content, int? workerId, QuickReply? existing}) =>
+      handle(() async {
+        setState(const QuickReplyCreationState.inProgress());
+        final result = await _repo.save(title: title, content: content, existing: existing);
+        setState(QuickReplyCreationState.completed(result));
+      }, error: (e, st) async => setState(const QuickReplyCreationState.error()));
+}
+```
+
+Use `SequentialControllerHandler` for load/watch operations.
+
+**Config widget** owns the controller lifecycle and exposes a static factory so callers need only one line:
+
+```dart
+class QuickReplyCreationConfigWidget extends StatefulWidget {
+  static Future<void> showCreationDialog(BuildContext context, {QuickReply? existing}) {
+    return showDialog<void>(
+      context: context,
+      builder: (ctx) => QuickReplyCreationConfigWidget(
+        builder: (_) => QuickReplyCreationDialogWidget(existing: existing),
+      ),
+    );
+  }
+  // ...
+}
+```
+
+**Dialog widget** uses `StateConsumer` to close itself on completion and `PopScope` to block dismissal mid-flight:
+
+```dart
+StateConsumer<QuickReplyCreationController, QuickReplyCreationState>(
+  controller: _controller,
+  listener: (context, controller, oldState, newState) {
+    if (newState is QuickReplyCreation$CompletedState) Navigator.pop(context);
+  },
+  builder: (context, state, child) => PopScope(
+    canPop: state is! QuickReplyCreation$InProgressState,
+    child: AlertDialog(...),
+  ),
+);
+```
+
+**Calling site** only uses the static factory — no knowledge of internals:
+
+```dart
+QuickReplyCreationConfigWidget.showCreationDialog(context);
+QuickReplyCreationConfigWidget.showCreationDialog(context, existing: reply);
+QuickReplyDeletionConfigWidget.showDeletionDialog(context, reply);
+```
+
+### Rules to always follow
+
+- **Group by domain concern, not by function count.** A controller with three related methods is fine. A controller with two unrelated concerns must be split.
+- **Create and update may share one feature** when they are conceptually the same action (both write the same record). The create-vs-update decision belongs in the repository, not the controller or widget.
+- **Split when UI states are independent.** If two operations each need their own `inProgress` / `completed` / `error` displayed simultaneously or to different widgets, they need separate controllers and separate features.
+- **Config widgets own controller lifecycle** — created in `initState`, disposed in `dispose`, never elsewhere.
+- **Static factory methods on config widgets** keep all wiring internal and give callers a one-line API.
+- **`DroppableControllerHandler`** for mutations. **`SequentialControllerHandler`** for load/watch.
+- **`PopScope(canPop: state is! ...InProgressState)`** on every dialog with an async operation.
+
 ## Conclusion
 
 The AveraPOS Flutter application demonstrates a well-implemented clean architecture with:

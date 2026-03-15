@@ -39,11 +39,6 @@ final class QuickRepliesController extends StateController<QuickRepliesState>
     );
   }
 
-  void create({required String title, required String content, required int workerId}) => handle(
-    () async => _repository.create(title: title, content: content, workerId: workerId),
-    error: (e, st) async => setState(QuickRepliesState.error(e.toString())),
-  );
-
   void update(QuickReply reply) => handle(
     () async => _repository.update(reply),
     error: (e, st) async => setState(QuickRepliesState.error(e.toString())),
