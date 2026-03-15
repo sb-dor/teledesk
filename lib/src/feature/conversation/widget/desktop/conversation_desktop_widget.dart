@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
@@ -606,13 +607,7 @@ class _MessageContent extends StatelessWidget {
           fileId: message.fileId,
         );
       case MessageType.sticker:
-        return _MediaTile(
-          icon: Icons.emoji_emotions_rounded,
-          label: 'Sticker',
-          textColor: textColor,
-          caption: null,
-          fileId: message.fileId,
-        );
+        return _PhotoBubble(fileId: message.fileId, textColor: textColor);
       case MessageType.document:
         return _MediaTile(
           icon: Icons.insert_drive_file_rounded,
@@ -771,13 +766,12 @@ class _PhotoBubbleState extends State<_PhotoBubble> {
           onTap: () => _showFullScreen(ctx, url),
           child: ClipRRect(
             borderRadius: BorderRadius.circular(8),
-            child: Image.network(
-              url,
+            child: CachedNetworkImage(
+              imageUrl: url,
               width: 220,
               fit: BoxFit.cover,
-              loadingBuilder: (_, child, progress) =>
-                  progress == null ? child : _placeholder(loading: true),
-              errorBuilder: (_, __, ___) => _placeholder(),
+              placeholder: (_, __) => _placeholder(loading: true),
+              errorWidget: (_, __, ___) => _placeholder(),
             ),
           ),
         );
@@ -794,7 +788,15 @@ class _PhotoBubbleState extends State<_PhotoBubble> {
             InteractiveViewer(
               minScale: 0.5,
               maxScale: 4,
-              child: Center(child: Image.network(url, fit: BoxFit.contain)),
+              child: Center(
+                  child: CachedNetworkImage(
+                    imageUrl: url,
+                    fit: BoxFit.contain,
+                    placeholder: (_, __) => const CircularProgressIndicator(),
+                    errorWidget: (_, __, ___) =>
+                        const Icon(Icons.broken_image_rounded, size: 64, color: Colors.white54),
+                  ),
+                ),
             ),
             Positioned(
               top: 12,
